@@ -55,23 +55,38 @@ public class Select(string id): Panel(id)
 
     public override void Render(IRenderContext context)
     {
-        var heigth = 0;
+        
         
         if (Header is { IsVisible: true })
         {
             Header?.Render(context.CreateSubContext(0,0,context.Size.Width,1));
-            heigth += 1;
+            context = context.CreateSubContext(0,1,context.Size.Width,context.Size.Height-1);
         }
+
+        var selectedItemY = 0;
+        for (var i = 0; i < Count; i++)
+        {
+            var bounds = this[i].Measure(new Size(context.Size.Width,context.Size.Height-selectedItemY));
+            selectedItemY += bounds.Height;
+            if (SelectedIndex == i) break;
+        }
+        if (selectedItemY > context.Size.Height)
+        {
+            var scroll = selectedItemY - context.Size.Height;
+            context = context.CreateSubContext(0,-scroll,context.Size.Width,context.Size.Height+scroll);
+        }
+
+        var height = 0;
         for (var i = 0; i < Count; i++)
         {
             var num = i + 1; // numbering start with 1
             var header = SelectedIndex == i ? $"->{num}." : $"  {num}.";
-            context.WriteString(0,heigth,header);
+            context.WriteString(0,height,header);
             var item = this[i];
-            var availableSize = new Size(context.Size.Width-header.Length,context.Size.Height-heigth);
+            var availableSize = new Size(context.Size.Width-header.Length,context.Size.Height-height);
             var bounds = item.Measure(availableSize);
-            item.Render(context.CreateSubContext(header.Length,heigth, bounds));
-            heigth += bounds.Height;
+            item.Render(context.CreateSubContext(header.Length,height, bounds));
+            height += bounds.Height;
         }
     }
 

@@ -46,6 +46,7 @@ public class SubRenderContext(IRenderContext parent, int x, int y, Size size)
 
     public void Write(int x1, int y1, char value)
     {
+        if (x1<0 || y1<0 || x1 >= Size.Width || y1 >= Size.Height) return;
         parent.Write(x+x1, y+y1, value);
     }
 }
