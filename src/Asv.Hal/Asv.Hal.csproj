@@ -5,17 +5,17 @@
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
-
-    <ItemGroup>
-      <Folder Include="Keyboard\" />
-      <Folder Include="Screen\" />
-    </ItemGroup>
     
     <ItemGroup>
         <PackageReference Include="Asv.IO" Version="3.0.0-dev.4" />
         <PackageReference Include="System.Device.Gpio" Version="3.2.0" />
         <PackageReference Include="ZLogger" Version="2.5.5" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="Display\Control\Panel\" />
     </ItemGroup>
 
 </Project>

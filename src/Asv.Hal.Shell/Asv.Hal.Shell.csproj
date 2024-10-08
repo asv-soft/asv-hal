@@ -16,5 +16,9 @@
         </PackageReference>
     </ItemGroup>
     
+    <ItemGroup>
+      <ProjectReference Include="..\Asv.Hal\Asv.Hal.csproj" />
+    </ItemGroup>
+    
 
 </Project>
