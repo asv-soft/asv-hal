@@ -18,7 +18,7 @@ public class ConsoleScreen(Size size) : BufferScreen(size)
             Console.Write("║");
             for (var j = 0; j < Size.Width; j++)
             {
-                Console.Write(buffer[i,j]);
+                Console.Write(buffer[j,i]);
             }
             Console.Write("║");
             Console.WriteLine();

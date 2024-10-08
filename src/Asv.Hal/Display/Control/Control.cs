@@ -40,15 +40,18 @@ public abstract class Control :DisposableOnceWithCancel
         if (e.Strategy == RoutingStrategy.Bubble && VisualParent != null)
         {
             VisualParent.OnEvent(e);
+            return;
         }
-        if (e.Strategy == RoutingStrategy.Bubble && VisualChildren.Count > 0)
+        if (e.Strategy == RoutingStrategy.Tunnel && VisualChildren.Count > 0)
         {
             foreach (var child in VisualChildren)
             {
                 child.OnEvent(e);
+                if (e.IsHandled) return;
             }
         }
     }
+    
 
     protected void AddVisualChild(Control? child)
     {
@@ -74,7 +77,6 @@ public abstract class Control :DisposableOnceWithCancel
             Volatile.Write(ref _visualChildren, newChildren);
             break;
         }
-        
     }
 
     #endregion
@@ -86,7 +88,6 @@ public abstract class Control :DisposableOnceWithCancel
 
     public abstract Size Measure(Size availableSize);
     public abstract void Render(IRenderContext context);
-
     protected void RiseRenderRequestEvent()
     {
         OnEvent(new RenderRequestEvent(this));

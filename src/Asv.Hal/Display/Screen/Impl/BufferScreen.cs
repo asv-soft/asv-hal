@@ -23,7 +23,7 @@ public abstract class BufferScreen : IScreen
             {
                 for (var j = 0; j < Size.Height; j++)
                 {
-                    _buffer[j, i] = ScreenHelper.Empty;
+                    _buffer[i, j] = ScreenHelper.Empty;
                 }
             }
         }
@@ -39,7 +39,7 @@ public abstract class BufferScreen : IScreen
         }
         lock (_lock)
         {
-            _buffer[y, x] = value;
+            _buffer[x, y] = value;
         }
     }
 

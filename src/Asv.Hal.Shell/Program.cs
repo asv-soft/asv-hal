@@ -34,7 +34,28 @@ public class AppCommands
             new DataStreamKeyBoard(port)
         );
 
-        
+        var wnd = new Window("root", TimeProvider.System, TimeSpan.FromMilliseconds(100), keyboard,screen);
+        var select = new Select("sel")
+        {
+            new TextBlock("item1")
+            {
+                Text = "Item 1"
+            },
+            new TextBlock("item2")
+            {
+                Text = "Item 2"
+            },
+            new TextBlock("item3")
+            {
+                Text = "Item 3"
+            },
+            new TextBlock("item4")
+            {
+                Text = "Item 4"
+            },
+        };
+        select.Header = new TextBlock("h"){Text = "Select item:"};
+        wnd.Current = select;
         
         
         var tcs = new TaskCompletionSource();

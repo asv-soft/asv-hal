@@ -32,6 +32,10 @@ public interface IRenderContext
     {
         return new SubRenderContext(this, x, y, size);
     }
+    IRenderContext CreateSubContext(int x, int y, int width, int height)
+    {
+        return new SubRenderContext(this, x, y, new Size(width, height));
+    }
     
 }
 
