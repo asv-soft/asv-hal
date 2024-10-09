@@ -7,29 +7,27 @@ public enum HorizontalPosition
     Right,
 }
 
-public class TextBlock(string id) : Control(id)
+public class TextBlock(string? text = null, HorizontalPosition align = HorizontalPosition.Left ) : Control
 {
-    private HorizontalPosition _align;
-    private string? _text;
-
+    public static explicit operator TextBlock(string text) => new(text);
     public HorizontalPosition Align
     {
-        get => _align;
+        get => align;
         set
         {
-            if (_align == value) return;
-            _align = value;
+            if (align == value) return;
+            align = value;
             RiseRenderRequestEvent();
         }
     }
     
     public string? Text
     {
-        get => _text;
+        get => text;
         set
         {
-            if (_text == value) return;
-            _text = value;
+            if (text == value) return;
+            text = value;
             RiseRenderRequestEvent();
         }
     }
@@ -41,20 +39,20 @@ public class TextBlock(string id) : Control(id)
             : new Size(Text?.Length??0,1);
     }
 
-    public override void Render(IRenderContext context)
+    public override void Render(IRenderContext ctx)
     {
         if (IsVisible == false) return;
-        if (string.IsNullOrWhiteSpace(_text)) return;
-        switch (_align)
+        if (string.IsNullOrWhiteSpace(text)) return;
+        switch (align)
         {
             case HorizontalPosition.Left:
-                context.WriteString(0,0,Text); 
+                ctx.WriteString(0,0,Text); 
                 break;
             case HorizontalPosition.Center:
-                context.WriteString((context.Size.Width - _text.Length)/2,0,Text);
+                ctx.WriteString((ctx.Size.Width - text.Length)/2,0,Text);
                 break;
             case HorizontalPosition.Right:
-                context.WriteString(context.Size.Width - _text.Length,0,Text);
+                ctx.WriteString(ctx.Size.Width - text.Length,0,Text);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();

@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace Asv.Hal;
 
-public abstract class Panel(string id) : Control(id), IList<Control>
+public class ControlCollection(Panel owner) : IList<Control>
 {
     private readonly List<Control> _items = [];
     
@@ -19,14 +19,14 @@ public abstract class Panel(string id) : Control(id), IList<Control>
     public void Add(Control item)
     {
         _items.Add(item);
-        AddVisualChild(item);
+        owner.AddVisualChild(item);
     }
 
     public void Clear()
     {
         foreach (var item in _items)
         {
-            RemoveVisualChild(item);
+            owner.RemoveVisualChild(item);
         }
         _items.Clear();
     }
@@ -45,7 +45,7 @@ public abstract class Panel(string id) : Control(id), IList<Control>
     {
         if (_items.Remove(item))
         {
-            RemoveVisualChild(item);
+            owner.RemoveVisualChild(item);
             return true;
         }
 
@@ -62,14 +62,14 @@ public abstract class Panel(string id) : Control(id), IList<Control>
     public void Insert(int index, Control item)
     {
         _items.Insert(index, item);
-        AddVisualChild(item);
+        owner.AddVisualChild(item);
     }
 
     public void RemoveAt(int index)
     {
         var item = _items[index];
         _items.RemoveAt(index);
-        RemoveVisualChild(item);
+        owner.RemoveVisualChild(item);
     }
 
     public Control this[int index]
@@ -79,9 +79,19 @@ public abstract class Panel(string id) : Control(id), IList<Control>
         {
             var old = _items[index];
             if (old == value) return;
-            RemoveVisualChild(_items[index]);
-            AddVisualChild(value);
+            owner.RemoveVisualChild(_items[index]);
+            owner.AddVisualChild(value);
             _items[index] = value;
         }
     }
+}
+
+public abstract class Panel : Control
+{
+    protected Panel()
+    {
+        Items = new ControlCollection(this);
+    }
+
+    public ControlCollection Items { get; }
 }

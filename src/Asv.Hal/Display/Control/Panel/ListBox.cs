@@ -2,13 +2,22 @@ using System.Diagnostics;
 
 namespace Asv.Hal;
 
-public class Select(string id): Panel(id)
+public class ListBox : Panel
 {
+    private readonly Action<SelectionChangedEvent>? _onSelectionChanged;
     private Control? _header;
     private int _selectedIndex;
     private string _pointer = "->";
     private string _emptyPointer = "  ";
 
+    public ListBox(string? header = null, Action<SelectionChangedEvent>? onSelectionChanged = null)
+    {
+        if (header != null)
+        {
+            Header = header;
+        }
+        _onSelectionChanged = onSelectionChanged;
+    }
     public Control? Header
     {
         get => _header;
@@ -41,14 +50,17 @@ public class Select(string id): Panel(id)
         set
         {
             if (value < 0) value = 0;
-            if (value >= Count) value = Count - 1;
+            if (value >= Items.Count) value = Items.Count - 1;
             if (_selectedIndex == value) return;
             _selectedIndex = value;
             RiseRenderRequestEvent();
+            var eve = new SelectionChangedEvent(this, Items[_selectedIndex]);
+            _onSelectionChanged?.Invoke(eve);
+            if (eve.IsHandled == false) Event(eve);
         }
     }
     
-    public Control? SelectedItem => Count == 0 ? null : this[SelectedIndex];
+    public Control? SelectedItem => Items.Count == 0 ? null : Items[SelectedIndex];
 
     public override Size Measure(Size availableSize)
     {
@@ -61,7 +73,7 @@ public class Select(string id): Panel(id)
             width = Math.Max(width, size.Width);
         }
 
-        foreach (var item in this.Where(x=>x.IsVisible))
+        foreach (var item in Items.Where(x=>x.IsVisible))
         {
             var size = item.Measure(new Size(width,availableSize.Height - heigth));
             heigth += size.Height;
@@ -70,39 +82,40 @@ public class Select(string id): Panel(id)
         return new Size(width,heigth);
     }
 
-    public override void Render(IRenderContext context)
+    public override void Render(IRenderContext ctx)
     {
         if (Header is { IsVisible: true })
         {
-            Header?.Render(context.CreateSubContext(0,0,context.Size.Width,1));
-            context = context.CreateSubContext(0,1,context.Size.Width,context.Size.Height-1);
+            Header?.Render(ctx.Crop(0,0,ctx.Size.Width,1));
+            ctx = ctx.Crop(0,1,ctx.Size.Width,ctx.Size.Height-1);
         }
 
         var selectedItemY = 0;
-        for (var i = 0; i < Count; i++)
+        for (var i = 0; i < Items.Count; i++)
         {
-            if (this[i].IsVisible == false) continue;
-            var bounds = this[i].Measure(new Size(context.Size.Width,context.Size.Height-selectedItemY));
+            var item = Items[i];
+            if (item.IsVisible == false) continue;
+            var bounds = item.Measure(new Size(ctx.Size.Width,ctx.Size.Height-selectedItemY));
             selectedItemY += bounds.Height;
             if (SelectedIndex == i) break;
         }
-        if (selectedItemY > context.Size.Height)
+        if (selectedItemY > ctx.Size.Height)
         {
-            var scroll = selectedItemY - context.Size.Height;
-            context = context.CreateSubContext(0,-scroll,context.Size.Width,context.Size.Height+scroll);
+            var scroll = selectedItemY - ctx.Size.Height;
+            ctx = ctx.Crop(0,-scroll,ctx.Size.Width,ctx.Size.Height+scroll);
         }
 
         var height = 0;
-        for (var i = 0; i < Count; i++)
+        for (var i = 0; i < Items.Count; i++)
         {
-            var item = this[i];
-            if (this[i].IsVisible == false) continue;
+            var item = Items[i];
+            if (item.IsVisible == false) continue;
             var num = i + 1; // numbering start with 1
             var header = SelectedIndex == i ? $"{Pointer}{num}." : $"{_emptyPointer}{num}.";
-            context.WriteString(0,height,header);
-            var availableSize = new Size(context.Size.Width-header.Length,context.Size.Height-height);
+            ctx.WriteString(0,height,header);
+            var availableSize = new Size(ctx.Size.Width-header.Length,ctx.Size.Height-height);
             var bounds = item.Measure(availableSize);
-            item.Render(context.CreateSubContext(header.Length,height, bounds));
+            item.Render(ctx.Crop(header.Length,height, bounds));
             height += bounds.Height;
         }
     }
@@ -120,15 +133,25 @@ public class Select(string id): Panel(id)
         switch (e.Key.Type)
         {
             case KeyType.Enter:
-                e.IsHandled = true;
-                SelectedItem?.OnRoutedEvent(new KeyDownEvent(this, e.Key));
+                if (IsFocused)
+                {
+                    if (SelectedItem != null) SelectedItem.IsFocused = true;
+                    SelectedItem?.Event(new KeyDownEvent(this,new KeyValue(KeyType.Enter,null)));
+                    e.IsHandled = true;
+                }
                 break;
             case KeyType.Digit:
-                Debug.Assert(e.Key.Value.HasValue);
-                e.IsHandled = true;
-                SelectedIndex = int.Parse(e.Key.Value.Value.ToString()) - 1;// numbering start with 1
+                if (IsFocused)
+                {
+                    Debug.Assert(e.Key.Value.HasValue);
+                    SelectedIndex = int.Parse(e.Key.Value.Value.ToString()) - 1;// numbering start with 1
+                    if (SelectedItem != null) SelectedItem.IsFocused = true;
+                    SelectedItem?.Event(new KeyDownEvent(this,new KeyValue(KeyType.Enter,null)));
+                    e.IsHandled = true;
+                }
                 break;
             case KeyType.Escape:
+                IsFocused = true;
                 break;
             case KeyType.Function:
                 break;
@@ -141,8 +164,10 @@ public class Select(string id): Panel(id)
                 ++SelectedIndex;
                 break;
             case KeyType.LeftArrow:
+                SelectedIndex = 0;
                 break;
             case KeyType.RightArrow:
+                SelectedIndex = Items.Count - 1;
                 break;
             case KeyType.Dot:
                 break;

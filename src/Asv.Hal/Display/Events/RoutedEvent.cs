@@ -7,9 +7,9 @@ public enum RoutingStrategy
     Bubble,
     Tunnel
 }
-public class RoutedEvent(object sender, RoutingStrategy strategy)
+public class RoutedEvent(Control sender, RoutingStrategy strategy)
 {
-    public object Sender { get; } = sender;
+    public Control Sender { get; } = sender;
     public RoutingStrategy Strategy { get; } = strategy;
     public bool IsHandled { get; set; }
    

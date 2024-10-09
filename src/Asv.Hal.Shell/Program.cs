@@ -34,29 +34,36 @@ public class AppCommands
             new DataStreamKeyBoard(port)
         );
 
-        var wnd = new Window("root", TimeProvider.System, TimeSpan.FromMilliseconds(100), keyboard,screen);
-        var select = new Select("sel")
+        var wnd = new Window(TimeProvider.System, TimeSpan.FromMilliseconds(100), keyboard,screen);
+        
+        var loading = new LoadingByTime("Loading...", TimeSpan.FromSeconds(3));
+        var editor = new ListBox
         {
-            new TextBlock("item1")
+            Header = "Edit mode:",
+            Items =
             {
-                Text = "Item 1"
-            },
-            new TextBlock("item2")
+                new TextBox("Param1","dBm"),
+                new TextBox("Param2","Hz"),
+                new TextBox("Param3","m"),
+                new TextBox("Param4","m/s"),
+                new TextBox("Param5","m/s^2"),},
+        };
+        var selectMode = new ListBox
+        {
+            Header = "Select mode:",
+            Items =
             {
-                Text = "Item 2"
-            },
-            new TextBlock("item3")
-            {
-                Text = "Item 3"
-            },
-            new TextBlock("item4")
-            {
-                Text = "Item 4"
+                new Button("Loading", onClick: x => wnd.GoTo(loading)),
+                new Button("Item 2"),
+                new Button("Item 3"),
+                new Button("Item 4"),
+                new Button("Item 5"),
+                new Button("Editor", onClick: x => wnd.GoTo(editor)),
+
             },
         };
-        select.Header = new TextBlock("h"){Text = "Select item:"};
-        wnd.Current = select;
         
+        wnd.GoTo(selectMode);
         
         var tcs = new TaskCompletionSource();
         Console.CancelKeyPress += (_, _) =>

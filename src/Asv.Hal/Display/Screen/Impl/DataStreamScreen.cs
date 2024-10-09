@@ -16,13 +16,6 @@ public class DataStreamScreen(IPort port, Size size) : BufferScreen(size)
             Encoding.ASCII.GetBytes(src, length, dst, length);    
         }
             
-        for (var i = 0; i < Size.Width; i++)
-        {
-            for (var j = 0; j < Size.Height; j++)
-            {
-                Console.Write(buffer[j, i]);
-            }
-        }
         port.Send([0x0A],1,default).Wait();
         port.Send(data,length,default).Wait();
         port.Send([0x0D],1,default).Wait();

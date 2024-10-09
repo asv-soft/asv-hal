@@ -2,8 +2,11 @@ namespace Asv.Hal;
 
 public interface IRenderContext
 {
+    
     Size Size { get; }
     void Write(int x, int y, char value);
+    int Width => Size.Width;
+    int Height => Size.Height;
     void WriteString(int x, int y, string? value)
     {
         if (value == null) return;
@@ -28,11 +31,11 @@ public interface IRenderContext
         FillChar(x,y,width,ScreenHelper.Empty);
     }
 
-    IRenderContext CreateSubContext(int x, int y, Size size)
+    IRenderContext Crop(int x, int y, Size size)
     {
         return new SubRenderContext(this, x, y, size);
     }
-    IRenderContext CreateSubContext(int x, int y, int width, int height)
+    IRenderContext Crop(int x, int y, int width, int height)
     {
         return new SubRenderContext(this, x, y, new Size(width, height));
     }

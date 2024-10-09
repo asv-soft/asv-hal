@@ -11,10 +11,10 @@ public class Window: Control
     private Control? _current;
     private readonly TimeProvider _timeProvider;
     private readonly IScreen _screen;
+    private Control? _focused;
 
 
-    public Window(string id, TimeProvider timeProvider, TimeSpan animationTick, IKeyboard keyboard,IScreen screen)
-        :base(id)
+    public Window(TimeProvider timeProvider, TimeSpan animationTick, IKeyboard keyboard,IScreen screen)
     {
         var uiTaskScheduler = new SingleThreadTaskScheduler("UI Thread").DisposeItWith(Disposable);
         _uiTaskFactory = new TaskFactory(uiTaskScheduler);
@@ -27,7 +27,7 @@ public class Window: Control
 
     private void OnKeyDown(KeyValue keyValue)
     {
-        _uiTaskFactory.StartNew(_ => OnRoutedEvent(new KeyDownEvent(this, keyValue)), null, DisposeCancel);
+        _uiTaskFactory.StartNew(_ => Event(new KeyDownEvent(this, keyValue)), null, DisposeCancel);
     }
 
     private async void Tick(object? state)
@@ -35,7 +35,7 @@ public class Window: Control
         if (Interlocked.Exchange(ref _tickInProgress,1) != 0) return;
         try
         {
-            await _uiTaskFactory.StartNew(_=>OnRoutedEvent(new AnimationTickEvent(this,_timeProvider)), null, DisposeCancel);
+            await _uiTaskFactory.StartNew(_=>Event(new AnimationTickEvent(this,_timeProvider)), null, DisposeCancel);
             if (Interlocked.CompareExchange(ref _renderRequested, 0, 1) != 0)
             {
                 using var loop = _screen.BeginRenderLoop();
@@ -54,23 +54,44 @@ public class Window: Control
     
     public override Size Measure(Size availableSize) => availableSize;
 
-    public override void Render(IRenderContext context)
+    public override void Render(IRenderContext ctx)
     {
-        Current?.Render(context);
+        Current?.Render(ctx);
     }
 
     public Control? Current
     {
         get => _current;
-        set
+        private set
         {
             if (_current == value) return;
             RemoveVisualChild(_current);
             _current = value;
             AddVisualChild(value);
-            OnRoutedEvent(new RenderRequestEvent(this));
+            if (_current != null) _current.IsFocused = true;
+            Event(new RenderRequestEvent(this));
         }
     }
+
+    public Control? Focused
+    {
+        get => _focused;
+        private set
+        {
+            if (_focused == value) return;
+            _focused = value;
+            _uiTaskFactory.StartNew(() =>
+                Event(new FocusUpdatedEvent(this, _focused ?? this, RoutingStrategy.Tunnel)));
+        }
+    }
+
+    public void GoTo(Control? control)
+    {
+        _uiTaskFactory.StartNew(() => Current = control);
+
+    }
+    
+    public TaskFactory UiTaskFactory => _uiTaskFactory;
 
     protected override void InternalOnEvent(RoutedEvent e)
     {
@@ -78,6 +99,11 @@ public class Window: Control
         {
             e.IsHandled = true;
             Interlocked.Exchange(ref _renderRequested, 1);
+        }
+
+        if (e is FocusUpdatedEvent { Strategy: RoutingStrategy.Bubble } origin)
+        {
+            Focused = origin.Target;
         }
     }
 }

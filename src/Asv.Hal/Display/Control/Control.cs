@@ -11,14 +11,16 @@ public abstract class Control:DisposableOnceWithCancel
     private Control[] _visualChildren = [];
     private bool _isVisible = true;
     private Subject<RoutedEvent>? _onEvent;
+    private bool _isFocused;
 
-    protected Control(string id)
+    public static implicit operator Control(string text) => new TextBlock(text);
+
+    protected Control()
     {
-        Id = id;
         Disposable.AddAction(()=>Volatile.Write(ref _visualChildren, Disposed));
     }
 
-    public string Id { get;}
+    public object? Tag { get; set; }
     
     public bool IsVisible
     {
@@ -30,35 +32,54 @@ public abstract class Control:DisposableOnceWithCancel
             RiseRenderRequestEvent();
         }
     }
+    public bool IsFocused
+    {
+        get => _isFocused;
+        set
+        {
+            if (_isFocused == value) return;
+            _isFocused = value;
+            if (_isFocused)
+            {
+                Event(new FocusUpdatedEvent(this,this,RoutingStrategy.Bubble));
+            }
+        }
+    }
 
     #region Visual tree
 
     private Control? VisualParent { get; set; }
     private IReadOnlyList<Control> VisualChildren => Volatile.Read(ref _visualChildren);
 
-    public void OnRoutedEvent(RoutedEvent e)
+    public void Event(RoutedEvent e)
     {
         InternalOnEvent(e);
         if (e.IsHandled) return;
         _onEvent?.OnNext(e);
         if (e.Strategy == RoutingStrategy.Bubble && VisualParent != null)
         {
-            VisualParent.OnRoutedEvent(e);
+            VisualParent.Event(e);
             return;
         }
         if (e.Strategy == RoutingStrategy.Tunnel && VisualChildren.Count > 0)
         {
             foreach (var child in VisualChildren)
             {
-                child.OnRoutedEvent(e);
+                child.Event(e);
                 if (e.IsHandled) return;
             }
         }
+        if (e is FocusUpdatedEvent focus && focus.Target != this)
+        {
+            IsFocused = false;
+        }
     }
+
     
+
     public IObservable<RoutedEvent> OnEvent => _onEvent ??= new Subject<RoutedEvent>().DisposeItWith(Disposable);
 
-    protected void AddVisualChild(Control? child)
+    protected internal void AddVisualChild(Control? child)
     {
         if (child == null) return;
         var children = Volatile.Read(ref _visualChildren);
@@ -68,7 +89,7 @@ public abstract class Control:DisposableOnceWithCancel
         newChildren[children.Length] = child;
         Volatile.Write(ref _visualChildren, newChildren);
     }
-    protected void RemoveVisualChild(Control? child)
+    protected internal void RemoveVisualChild(Control? child)
     {
         if (child == null) return;
         var children = Volatile.Read(ref _visualChildren);
@@ -92,9 +113,9 @@ public abstract class Control:DisposableOnceWithCancel
     }
 
     public abstract Size Measure(Size availableSize);
-    public abstract void Render(IRenderContext context);
+    public abstract void Render(IRenderContext ctx);
     protected void RiseRenderRequestEvent()
     {
-        OnRoutedEvent(new RenderRequestEvent(this));
+        Event(new RenderRequestEvent(this));
     }
 }
