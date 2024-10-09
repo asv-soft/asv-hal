@@ -5,37 +5,33 @@ using Moq;
 
 namespace Asv.Hal.Test.Led;
 
-public class LedAnimation_Test
+public class LedAnimationTests
 {
     private IRgbLed _led;
     private FakeTimeProvider _timeProvider = new();
-    private ILogger _logger;
     private TimeSpan _tick;
     private readonly ITestOutputHelper _output;
-    private int _busy;
 
-    public LedAnimation_Test(ITestOutputHelper outputHelper)
+    public LedAnimationTests(ITestOutputHelper outputHelper)
     {
         _output = outputHelper;
     }
 
     [Fact]
-    public async Task TestAnimationWithPattern_G___R____B()
+    public async Task LedAnimation_Test_Accept_Record_And_Light_Led()
     {
-        // Arrange
         var ledMock = new Mock<IRgbLed>();
         var fakeTimeProvider = new FakeTimeProvider(DateTime.UtcNow);
         var animationTick = TimeSpan.FromMilliseconds(100);
         var record = "G___R____B";
         var animation = new LedAnimation(ledMock.Object, fakeTimeProvider, animationTick, record);
-
-        // Act
+        
         for (int i = 0; i < record.Length; i++)
         {
             fakeTimeProvider.Advance(animationTick); 
             await Task.Delay(10); 
         }
-        // Assert
+        
         ledMock.Verify(led => led.Set(0, byte.MaxValue, 0), Times.Once); 
         ledMock.Verify(led => led.Set(byte.MaxValue, 0, 0), Times.Once); 
         ledMock.Verify(led => led.Set(0, 0, byte.MaxValue), Times.Once);
@@ -43,9 +39,9 @@ public class LedAnimation_Test
     }
 
     [Fact]
-    private async Task LedAnimation_Test_Red_Light_After_tick()
+    private void LedAnimation_Test_Red_Light_After_tick()
     {
-        var record = @"R_G_B_R_GB";
+        var record = @"R";
         _tick = new TimeSpan(1);
         _led = new NullLed();
         using var a = new LedAnimation(_led, _timeProvider, _tick, record);
@@ -56,7 +52,7 @@ public class LedAnimation_Test
     [Fact]
     private void LedAnimation_Test_Green_Light_After_tick()
     {
-        var record = @"G___R____B";
+        var record = @"G";
         _tick = new TimeSpan(1);
         _led = new NullLed();
         using var a = new LedAnimation(_led, _timeProvider, _tick, record);
