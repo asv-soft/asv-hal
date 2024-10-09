@@ -6,6 +6,8 @@ public class Select(string id): Panel(id)
 {
     private Control? _header;
     private int _selectedIndex;
+    private string _pointer = "->";
+    private string _emptyPointer = "  ";
 
     public Control? Header
     {
@@ -20,6 +22,19 @@ public class Select(string id): Panel(id)
         } 
     }
 
+    public string Pointer
+    {
+        get => _pointer;
+        set
+        {
+            if (_pointer == value) return;
+            _pointer = value;
+            _emptyPointer = new string(' ',value.Length);
+            RiseRenderRequestEvent();
+        } 
+    }
+    
+
     public int SelectedIndex
     {
         get => _selectedIndex;
@@ -32,6 +47,8 @@ public class Select(string id): Panel(id)
             RiseRenderRequestEvent();
         }
     }
+    
+    public Control? SelectedItem => Count == 0 ? null : this[SelectedIndex];
 
     public override Size Measure(Size availableSize)
     {
@@ -55,8 +72,6 @@ public class Select(string id): Panel(id)
 
     public override void Render(IRenderContext context)
     {
-        
-        
         if (Header is { IsVisible: true })
         {
             Header?.Render(context.CreateSubContext(0,0,context.Size.Width,1));
@@ -66,6 +81,7 @@ public class Select(string id): Panel(id)
         var selectedItemY = 0;
         for (var i = 0; i < Count; i++)
         {
+            if (this[i].IsVisible == false) continue;
             var bounds = this[i].Measure(new Size(context.Size.Width,context.Size.Height-selectedItemY));
             selectedItemY += bounds.Height;
             if (SelectedIndex == i) break;
@@ -79,10 +95,11 @@ public class Select(string id): Panel(id)
         var height = 0;
         for (var i = 0; i < Count; i++)
         {
-            var num = i + 1; // numbering start with 1
-            var header = SelectedIndex == i ? $"->{num}." : $"  {num}.";
-            context.WriteString(0,height,header);
             var item = this[i];
+            if (this[i].IsVisible == false) continue;
+            var num = i + 1; // numbering start with 1
+            var header = SelectedIndex == i ? $"{Pointer}{num}." : $"{_emptyPointer}{num}.";
+            context.WriteString(0,height,header);
             var availableSize = new Size(context.Size.Width-header.Length,context.Size.Height-height);
             var bounds = item.Measure(availableSize);
             item.Render(context.CreateSubContext(header.Length,height, bounds));
@@ -103,7 +120,8 @@ public class Select(string id): Panel(id)
         switch (e.Key.Type)
         {
             case KeyType.Enter:
-                
+                e.IsHandled = true;
+                SelectedItem?.OnRoutedEvent(new KeyDownEvent(this, e.Key));
                 break;
             case KeyType.Digit:
                 Debug.Assert(e.Key.Value.HasValue);

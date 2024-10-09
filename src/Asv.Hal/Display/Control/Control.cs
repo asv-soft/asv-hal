@@ -1,14 +1,16 @@
+using System.Reactive.Subjects;
 using Asv.Common;
 
 namespace Asv.Hal;
 
 
-public abstract class Control :DisposableOnceWithCancel
+public abstract class Control:DisposableOnceWithCancel
 {
     // (Avoid zero-length array allocations.) The identity of these arrays matters, so we can't use the shared Array.Empty<T>() instance
     private static readonly Control[] Disposed = [];
     private Control[] _visualChildren = [];
     private bool _isVisible = true;
+    private Subject<RoutedEvent>? _onEvent;
 
     protected Control(string id)
     {
@@ -33,25 +35,28 @@ public abstract class Control :DisposableOnceWithCancel
 
     private Control? VisualParent { get; set; }
     private IReadOnlyList<Control> VisualChildren => Volatile.Read(ref _visualChildren);
-    public void OnEvent(RoutedEvent e)
+
+    public void OnRoutedEvent(RoutedEvent e)
     {
         InternalOnEvent(e);
         if (e.IsHandled) return;
+        _onEvent?.OnNext(e);
         if (e.Strategy == RoutingStrategy.Bubble && VisualParent != null)
         {
-            VisualParent.OnEvent(e);
+            VisualParent.OnRoutedEvent(e);
             return;
         }
         if (e.Strategy == RoutingStrategy.Tunnel && VisualChildren.Count > 0)
         {
             foreach (var child in VisualChildren)
             {
-                child.OnEvent(e);
+                child.OnRoutedEvent(e);
                 if (e.IsHandled) return;
             }
         }
     }
     
+    public IObservable<RoutedEvent> OnEvent => _onEvent ??= new Subject<RoutedEvent>().DisposeItWith(Disposable);
 
     protected void AddVisualChild(Control? child)
     {
@@ -90,6 +95,6 @@ public abstract class Control :DisposableOnceWithCancel
     public abstract void Render(IRenderContext context);
     protected void RiseRenderRequestEvent()
     {
-        OnEvent(new RenderRequestEvent(this));
+        OnRoutedEvent(new RenderRequestEvent(this));
     }
 }

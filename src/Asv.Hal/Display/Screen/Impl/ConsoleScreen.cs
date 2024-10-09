@@ -13,12 +13,12 @@ public class ConsoleScreen(Size size) : BufferScreen(size)
             Console.Write("═");
         }
         Console.WriteLine("╗");
-        for (var i = 0; i < Size.Height; i++)
+        for (var x = 0; x < Size.Height; x++)
         {
             Console.Write("║");
-            for (var j = 0; j < Size.Width; j++)
+            for (var y = 0; y < Size.Width; y++)
             {
-                Console.Write(buffer[j,i]);
+                Console.Write(buffer[x,y]);
             }
             Console.Write("║");
             Console.WriteLine();

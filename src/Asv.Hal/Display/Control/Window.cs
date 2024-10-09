@@ -27,7 +27,7 @@ public class Window: Control
 
     private void OnKeyDown(KeyValue keyValue)
     {
-        _uiTaskFactory.StartNew(_ => OnEvent(new KeyDownEvent(this, keyValue)), null, DisposeCancel);
+        _uiTaskFactory.StartNew(_ => OnRoutedEvent(new KeyDownEvent(this, keyValue)), null, DisposeCancel);
     }
 
     private async void Tick(object? state)
@@ -35,7 +35,7 @@ public class Window: Control
         if (Interlocked.Exchange(ref _tickInProgress,1) != 0) return;
         try
         {
-            await _uiTaskFactory.StartNew(_=>OnEvent(new AnimationTickEvent(this,_timeProvider)), null, DisposeCancel);
+            await _uiTaskFactory.StartNew(_=>OnRoutedEvent(new AnimationTickEvent(this,_timeProvider)), null, DisposeCancel);
             if (Interlocked.CompareExchange(ref _renderRequested, 0, 1) != 0)
             {
                 using var loop = _screen.BeginRenderLoop();
@@ -68,7 +68,7 @@ public class Window: Control
             RemoveVisualChild(_current);
             _current = value;
             AddVisualChild(value);
-            OnEvent(new RenderRequestEvent(this));
+            OnRoutedEvent(new RenderRequestEvent(this));
         }
     }
 
