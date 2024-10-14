@@ -32,6 +32,9 @@ public abstract class Control:DisposableOnceWithCancel
             RiseRenderRequestEvent();
         }
     }
+
+    #region Focus
+
     public bool IsFocused
     {
         get => _isFocused;
@@ -41,11 +44,29 @@ public abstract class Control:DisposableOnceWithCancel
             _isFocused = value;
             if (_isFocused)
             {
-                Event(new FocusUpdatedEvent(this,this,RoutingStrategy.Bubble));
+                OnGotFocus();
+                Event(new GotFocusEvent(this));
+            }
+            else
+            {
+                OnLostFocus();
+                Event(new LostFocusEvent(this));
             }
         }
     }
 
+    protected virtual void OnGotFocus()
+    {
+        
+    }
+    
+    protected virtual void OnLostFocus()
+    {
+        
+    }
+
+    #endregion
+    
     #region Visual tree
 
     private Control? VisualParent { get; set; }
@@ -69,7 +90,7 @@ public abstract class Control:DisposableOnceWithCancel
                 if (e.IsHandled) return;
             }
         }
-        if (e is FocusUpdatedEvent focus && focus.Target != this)
+        if (e is FocusUpdatedEvent focus && focus.NewFocus != this)
         {
             IsFocused = false;
         }
@@ -112,7 +133,9 @@ public abstract class Control:DisposableOnceWithCancel
         
     }
 
-    public abstract Size Measure(Size availableSize);
+    public abstract int Width { get; }
+    public abstract int Height { get; }
+    
     public abstract void Render(IRenderContext ctx);
     protected void RiseRenderRequestEvent()
     {

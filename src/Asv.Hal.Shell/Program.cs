@@ -23,23 +23,23 @@ public class AppCommands
     [Command("display")]
     public void Root(string cs = "serial:COM43?br=9600")
     {
-        var port = PortFactory.Create("serial:COM43?br=9600");
+        var port = PortFactory.Create("tcp://127.0.0.1:7344?srv=true");
         port.Enable();
         var screen = new CompositeScreen(
             new ConsoleScreen(new Size(20,4)), 
-            new DataStreamScreen(port, new Size(20,4)));
+            new TelnetScreen(port, new Size(20,4)));
 
         var keyboard = new CompositeKeyboard(
             new ConsoleKeyboard(),
-            new DataStreamKeyBoard(port)
+            new TelnetKeyboard(port)
         );
 
         var wnd = new Window(TimeProvider.System, TimeSpan.FromMilliseconds(100), keyboard,screen);
         
         var loading = new LoadingByTime("Loading...", TimeSpan.FromSeconds(3));
-        var editor = new ListBox
+        var editor = new PropertyEditor()
         {
-            Header = "Edit mode:",
+            Header = new ToggleSwitch("Header"),
             Items =
             {
                 new TextBox("Param1","dBm"),
@@ -48,7 +48,7 @@ public class AppCommands
                 new TextBox("Param4","m/s"),
                 new TextBox("Param5","m/s^2"),},
         };
-        var selectMode = new ListBox
+        var selectMode = new MenuPanel
         {
             Header = "Select mode:",
             Items =

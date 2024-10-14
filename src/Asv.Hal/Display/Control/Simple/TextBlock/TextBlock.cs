@@ -9,6 +9,7 @@ public enum HorizontalPosition
 
 public class TextBlock(string? text = null, HorizontalPosition align = HorizontalPosition.Left ) : Control
 {
+    private char _background = ScreenHelper.Empty;
     public static explicit operator TextBlock(string text) => new(text);
     public HorizontalPosition Align
     {
@@ -31,31 +32,53 @@ public class TextBlock(string? text = null, HorizontalPosition align = Horizonta
             RiseRenderRequestEvent();
         }
     }
-    
-    public override Size Measure(Size availableSize)
+
+    public char Background
     {
-        return IsVisible == false 
-            ? new Size(0,0) 
-            : new Size(Text?.Length??0,1);
+        get => _background;
+        set
+        {
+            if (_background == value) return;
+            _background = value;
+            RiseRenderRequestEvent();
+        }
     }
+
+    public override int Height => 1;
+    public override int Width => text?.Length ?? 0;
 
     public override void Render(IRenderContext ctx)
     {
         if (IsVisible == false) return;
-        if (string.IsNullOrWhiteSpace(text)) return;
+        if (Text == null)
+        {
+            ctx.FillChar(0,0,ctx.Size.Width,_background);
+            return;
+        }
         switch (align)
         {
             case HorizontalPosition.Left:
-                ctx.WriteString(0,0,Text); 
+                ctx.WriteString(0,0,Text);
+                ctx.FillChar(Text.Length,0,ctx.Size.Width - Text.Length,_background);
                 break;
             case HorizontalPosition.Center:
-                ctx.WriteString((ctx.Size.Width - text.Length)/2,0,Text);
+                var startX = (ctx.Size.Width - Text.Length) / 2;
+                ctx.FillChar(0,0,startX,_background);
+                ctx.WriteString(startX,0,Text);
+                ctx.FillChar(startX + Text.Length,0,ctx.Size.Width - startX - Text.Length,_background);
                 break;
             case HorizontalPosition.Right:
-                ctx.WriteString(ctx.Size.Width - text.Length,0,Text);
+                ctx.FillChar(0,0,ctx.Size.Width - Text.Length,_background);
+                ctx.WriteString(ctx.Size.Width - Text.Length,0,Text);
+                ctx.FillChar(ctx.Size.Width,0,Text.Length,_background);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
+    }
+
+    public override string ToString()
+    {
+        return $"TextBlock[{Text}]";
     }
 }

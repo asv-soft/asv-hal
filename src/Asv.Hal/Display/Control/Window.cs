@@ -11,7 +11,7 @@ public class Window: Control
     private Control? _current;
     private readonly TimeProvider _timeProvider;
     private readonly IScreen _screen;
-    private Control? _focused;
+    private Control _focused;
 
 
     public Window(TimeProvider timeProvider, TimeSpan animationTick, IKeyboard keyboard,IScreen screen)
@@ -20,6 +20,7 @@ public class Window: Control
         _uiTaskFactory = new TaskFactory(uiTaskScheduler);
         _timeProvider = timeProvider;
         _screen = screen;
+        _focused = this;
         timeProvider.CreateTimer(Tick, null, animationTick, animationTick)
                 .DisposeItWith(Disposable);
         keyboard.OnKeyPress.Subscribe(OnKeyDown).DisposeItWith(Disposable);
@@ -51,8 +52,9 @@ public class Window: Control
             Interlocked.Exchange(ref _tickInProgress,0);
         }
     }
-    
-    public override Size Measure(Size availableSize) => availableSize;
+
+    public override int Height => Current?.Height ?? 0;
+    public override int Width => Current?.Width ?? 0;
 
     public override void Render(IRenderContext ctx)
     {
@@ -73,22 +75,22 @@ public class Window: Control
         }
     }
 
-    public Control? Focused
+    public Control Focused
     {
         get => _focused;
         private set
         {
             if (_focused == value) return;
+            var old = _focused;
             _focused = value;
             _uiTaskFactory.StartNew(() =>
-                Event(new FocusUpdatedEvent(this, _focused ?? this, RoutingStrategy.Tunnel)));
+                Event(new FocusUpdatedEvent(this, old, _focused)));
         }
     }
 
     public void GoTo(Control? control)
     {
         _uiTaskFactory.StartNew(() => Current = control);
-
     }
     
     public TaskFactory UiTaskFactory => _uiTaskFactory;
@@ -101,9 +103,11 @@ public class Window: Control
             Interlocked.Exchange(ref _renderRequested, 1);
         }
 
-        if (e is FocusUpdatedEvent { Strategy: RoutingStrategy.Bubble } origin)
+        if (e is GotFocusEvent focus)
         {
-            Focused = origin.Target;
+            Focused = focus.Sender;
         }
     }
+
+    
 }

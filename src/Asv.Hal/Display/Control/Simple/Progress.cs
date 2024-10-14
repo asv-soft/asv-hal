@@ -21,11 +21,9 @@ public class Progress : Control
     public char Right { get; set; } = ']';
     public char Fill { get; set; } = '=';
     public char Empty { get; set; } = '-';
-    
-    public override Size Measure(Size availableSize)
-    {
-        return new Size(availableSize.Width, 1);
-    }
+
+    public override int Width => 4;
+    public override int Height => 1;
 
     public override void Render(IRenderContext ctx)
     {

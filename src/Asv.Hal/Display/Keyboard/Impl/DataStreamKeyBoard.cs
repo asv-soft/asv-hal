@@ -4,6 +4,34 @@ using Asv.IO;
 
 namespace Asv.Hal;
 
+public class TelnetKeyboard:KeyboardBase
+{
+    enum State
+    {
+        ESC,
+        
+    }
+    private State _state;
+
+    public TelnetKeyboard(IDataStream port)
+    {
+        port.Subscribe(OnData).DisposeItWith(Disposable);
+    }
+
+    private void OnData(byte[] data)
+    {
+        foreach (var b in data)
+        {
+            switch (_state)
+            {
+                 
+            }
+        }
+    }
+}
+
+ 
+
 public class DataStreamKeyBoard:KeyboardBase
 {
     public DataStreamKeyBoard(string cs)

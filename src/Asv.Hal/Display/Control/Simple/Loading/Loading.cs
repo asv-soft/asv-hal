@@ -27,7 +27,8 @@ public class Loading : Control
         set => _progress.Value = value;
     }
 
-    public override Size Measure(Size availableSize) => availableSize;
+    public override int Height => _text.Height + _progress.Height;
+    public override int Width => Math.Max(_text.Width, _progress.Width);
 
     public override void Render(IRenderContext ctx)
     {

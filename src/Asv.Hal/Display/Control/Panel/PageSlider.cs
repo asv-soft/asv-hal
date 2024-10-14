@@ -20,10 +20,8 @@ public class PageSlider:Panel
     
     public Control? SelectedPage => Items[_pageIndex];
 
-    public override Size Measure(Size availableSize)
-    {
-        return SelectedPage?.Measure(availableSize) ?? availableSize;
-    }
+    public override int Width => SelectedPage?.Width ?? 0;
+    public override int Height => SelectedPage?.Height ?? 0;
 
     public override void Render(IRenderContext context)
     {
@@ -37,11 +35,13 @@ public class PageSlider:Panel
             if (key.Key.Type == KeyType.RightArrow)
             {
                 PageIndex++;
+                e.IsHandled = true;
             }
 
             if (key.Key.Type == KeyType.LeftArrow)
             {
                 PageIndex--;
+                e.IsHandled = true;
             }
         }
     }

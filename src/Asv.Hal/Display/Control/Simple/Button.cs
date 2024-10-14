@@ -14,21 +14,21 @@ public class Button: Control
         _onClick = onClick;
         if (text != null)
         {
-            Content = new TextBlock(text);
+            Content = new TextBlock(text,HorizontalPosition.Center)
+            {
+                Background = '='
+            };
         }
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
-    {
-        if (e is KeyDownEvent { Key.Type: KeyType.Enter } && IsFocused)
-        {
-            var click = new ButtonClickEvent(this);
-            _onClick?.Invoke(click);
-            if (click.IsHandled == false) Event(click);
-            e.IsHandled = true;
-        }
+    public override int Height => 1;
+    public override int Width => Content?.Width + (_left.HasValue ? 1 : 0) + (_right.HasValue ? 1 : 0) ?? 0;
 
-        base.InternalOnEvent(e);
+    protected override void OnGotFocus()
+    {
+        var click = new ButtonClickEvent(this);
+        _onClick?.Invoke(click);
+        if (click.IsHandled == false) Event(click);
     }
     
     public Control? Content
@@ -64,20 +64,6 @@ public class Button: Control
             _right = value;
             RiseRenderRequestEvent();
         }
-    }
-
-    public override Size Measure(Size availableSize)
-    {
-        var leftRightWidth = (_left.HasValue ? 1 : 0) + (_right.HasValue ? 1 : 0);
-        var origin = Content?.Measure(new Size(availableSize.Width - leftRightWidth, 1));
-        if (origin.HasValue)
-        {
-            return new Size(origin.Value.Width + leftRightWidth, origin.Value.Height);
-        }
-
-        return new Size(leftRightWidth, 0);
-
-
     }
 
     public override void Render(IRenderContext ctx)

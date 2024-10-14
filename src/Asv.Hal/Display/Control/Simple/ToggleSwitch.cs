@@ -3,8 +3,8 @@
 public class ToggleSwitch:Control
 {
     private bool _value;
-    private string _trueText;
-    private string _falseText;
+    private string _trueText = "on";
+    private string _falseText = "off";
 
     public ToggleSwitch(string? header = null)
     {
@@ -51,10 +51,8 @@ public class ToggleSwitch:Control
         }
     }
 
-    public override Size Measure(Size availableSize)
-    {
-        return new Size(availableSize.Width, 1);
-    }
+    public override int Width => Header.Width + (Value ? _trueText.Length : _falseText.Length);
+    public override int Height => 1;
 
     public override void Render(IRenderContext ctx)
     {

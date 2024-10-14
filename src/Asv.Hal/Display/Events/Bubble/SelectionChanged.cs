@@ -1,6 +1,7 @@
 namespace Asv.Hal;
 
-public class SelectionChangedEvent(Control sender, Control item) : RoutedEvent(sender, RoutingStrategy.Bubble)
+public class SelectionChangedEvent(Control sender,Control oldItem, Control newItem) : RoutedEvent(sender, RoutingStrategy.Bubble)
 {
-    public Control Item { get; } = item;
+    public Control? OldItem { get; } = oldItem;
+    public Control NewItem { get; } = newItem;
 }

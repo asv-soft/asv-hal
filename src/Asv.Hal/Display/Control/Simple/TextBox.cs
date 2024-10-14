@@ -2,11 +2,10 @@ namespace Asv.Hal;
 
 public class TextBox:Control
 {
-    private bool _isInEditMode;
     private bool _isCaretVisible;
     private TimeSpan _blinkTime = TimeSpan.FromMilliseconds(500);
     private long _lastBlink;
-    private string _lastValue;
+    private string? _lastValue;
     private string? _text;
 
     public TextBox(string? header = null, string? units = null)
@@ -29,6 +28,8 @@ public class TextBox:Control
         }
     }
    
+    public override int Width => Header.Width + Units.Width + (Text?.Length ?? 0);
+    public override int Height => 1;
     public TextBlock Header { get; }
     public TextBlock Units { get; }
 
@@ -45,25 +46,20 @@ public class TextBox:Control
 
     public char Cursor { get; set; } = '_';
 
-    public bool IsInEditMode
+   
+
+    protected override void OnGotFocus()
     {
-        get => _isInEditMode;
-        set
-        {
-            if (_isInEditMode == value) return;
-            _isInEditMode = value;
-            if (_isInEditMode)
-            {
-                _lastValue = Text;
-                Text = "";
-                _isCaretVisible = true;
-            }
-            if (_isInEditMode == false)
-            {
-                _isCaretVisible = false;
-            }
-            RiseRenderRequestEvent();
-        }
+        _lastValue = Text;
+        Text = "";
+        _isCaretVisible = true;
+        RiseRenderRequestEvent();
+    }
+
+    protected override void OnLostFocus()
+    {
+        _isCaretVisible = false;
+        RiseRenderRequestEvent();
     }
 
     public TimeSpan BlinkTime
@@ -76,16 +72,11 @@ public class TextBox:Control
             RiseRenderRequestEvent();
         }
     }
-
-    public override Size Measure(Size availableSize)
-    {
-        return new Size(availableSize.Width, 1);
-    }
+   
 
     public override void Render(IRenderContext ctx)
     {
-        
-        if (IsInEditMode)
+        if (IsFocused)
         {
             var valueWidth = Text?.Length ?? 0;
             Header.Render(ctx.Crop(0,0,ctx.Width - valueWidth,1));
@@ -97,11 +88,10 @@ public class TextBox:Control
         }
         else
         {
-            var unitSize = Units.Measure(new Size(ctx.Width,1));
-            var valueWidth = Text?.Length??0 + unitSize.Width;
+            var valueWidth = (Text?.Length??0) + Units.Width;
             Header.Render(ctx.Crop(0,0,ctx.Width - valueWidth,1));
             ctx.WriteString(ctx.Width - valueWidth,0,Text);
-            Units.Render(ctx.Crop(ctx.Width-unitSize.Width,0,unitSize.Width,1));
+            Units.Render(ctx.Crop(ctx.Width-Units.Width,0,Units.Width,1));
         }
         
     }
@@ -112,48 +102,38 @@ public class TextBox:Control
         {
             Text = changed.Text;
         }
-        if (IsInEditMode)
+
+        if (e is KeyDownEvent key)
         {
-            if (e is KeyDownEvent key)
+            if (IsFocused == false) return;
+            switch (key.Key.Type)
             {
-                switch (key.Key.Type)
-                {
-                    case KeyType.Enter:
-                        IsInEditMode = false;
-                        InternalOnEvent(new ValueEditedEvent(this, Text));
-                        break;
-                    case KeyType.Digit or KeyType.Dot:
-                        Text += key.Key.Value.ToString();
-                        RiseRenderRequestEvent();
-                        break;
-                    case KeyType.Escape:
-                        Text = _lastValue;
-                        IsInEditMode = false;
-                        break;
-                }
-                e.IsHandled = true;
+                case KeyType.Enter:
+                    IsFocused = false;
+                    InternalOnEvent(new ValueEditedEvent(this, Text));
+                    break;
+                case KeyType.Digit or KeyType.Dot:
+                    Text += key.Key.Value.ToString();
+                    RiseRenderRequestEvent();
+                    break;
+                case KeyType.Escape:
+                    Text = _lastValue;
+                    IsFocused = false;
+                    break;
             }
-        }
-        else
-        {
-            if (e is KeyDownEvent { Key.Type: KeyType.Enter })
-            {
-                IsInEditMode = true;
-                e.IsHandled = true;
-            }
+            e.IsHandled = true;
         }
         
-        if (e is AnimationTickEvent anim)
+        if (e is AnimationTickEvent anim && IsFocused)
         {
-            if (_isInEditMode)
+            if (anim.TimeProvider.GetElapsedTime(_lastBlink) > BlinkTime)
             {
-                if (anim.TimeProvider.GetElapsedTime(_lastBlink) > BlinkTime)
-                {
-                    _isCaretVisible = !_isCaretVisible;
-                    _lastBlink = anim.TimeProvider.GetTimestamp();
-                    RiseRenderRequestEvent();
-                }
+                _isCaretVisible = !_isCaretVisible;
+                _lastBlink = anim.TimeProvider.GetTimestamp();
+                RiseRenderRequestEvent();
             }
         }
     }
+
+    
 }
