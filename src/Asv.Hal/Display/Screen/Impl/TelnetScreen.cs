@@ -24,9 +24,7 @@ public class TelnetScreen : BufferScreen
             Encoding.ASCII.GetBytes(src, length, dst, length);    
         }
         
-        _port.Send([0xFF,0xFB,0x01], 3, default).Wait(); // [IAC WILL ECHO] Suppress Echo
-        _port.Send([0xFF,0xFD,0x03], 3, default).Wait(); // [IAC DO SUPPRESS-GOAHEAD] Character Mode / Line Mode
-        _port.Send([0xFF,0xFB,0x03], 3, default).Wait(); // [IAC DO SUPPRESS-GOAHEAD] Character Mode / Line Mode
+       
         
         _port.Send([27,99], 2, default).Wait(); // clr screen
         for (var y = 0; y < Size.Height; y++)
