@@ -8,6 +8,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		..\README.md = ..\README.md
 		Directory.Build.props = Directory.Build.props
+		..\.github\workflows\release-pre-version.yml = ..\.github\workflows\release-pre-version.yml
+		..\.github\workflows\release-debug-version.yml = ..\.github\workflows\release-debug-version.yml
+		..\.github\workflows\release-action.yml = ..\.github\workflows\release-action.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asv.Hal.Test", "Asv.Hal.Test\Asv.Hal.Test.csproj", "{F2BB3092-9BBB-4E22-B749-6649B8E9D6F8}"
