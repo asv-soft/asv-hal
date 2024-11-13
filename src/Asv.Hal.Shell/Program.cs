@@ -37,6 +37,7 @@ public class AppCommands
         var wnd = new Window(TimeProvider.System, TimeSpan.FromMilliseconds(100), keyboard,screen);
         
         var loading = new LoadingByTime("Loading...", TimeSpan.FromSeconds(3));
+        
         var editor = new PropertyEditor()
         {
             Header = new ToggleSwitch("Header"),

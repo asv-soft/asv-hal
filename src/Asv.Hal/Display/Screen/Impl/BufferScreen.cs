@@ -2,8 +2,6 @@ namespace Asv.Hal;
 
 public abstract class BufferScreen : IScreen
 {
-    
-    
     private readonly char[,] _buffer;
     private readonly object _lock = new();
 

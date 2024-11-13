@@ -14,8 +14,6 @@ public class TelnetScreen : BufferScreen
 
     protected override unsafe void InternalRender(char[,] buffer)
     {
-        
-        
         var length = Size.Width * Size.Height;
         var data = new byte[length];
         fixed (char* src = buffer)

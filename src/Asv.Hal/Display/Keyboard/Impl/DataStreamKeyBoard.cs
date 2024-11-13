@@ -220,7 +220,6 @@ public class TelnetKeyboard:KeyboardBase
 
     private void OnData(byte[] data)
     {
-        
         foreach (var b in Encoding.ASCII.GetChars(data))
         {
             switch (_state)
@@ -255,7 +254,7 @@ public class TelnetKeyboard:KeyboardBase
         }
     }
 
-    private State EndLine(byte b)
+    private State EndLine(char b)
     {
         if (b == 0x0D)
         {
@@ -264,20 +263,20 @@ public class TelnetKeyboard:KeyboardBase
         return State.Idle;
     }
 
-    private State EscBracket(byte b)
+    private State EscBracket(char b)
     {
         switch (b)
         {
-            case 0x41:
+            case (char)0x41:
                 RiseUpArrowEvent();
                 break;
-            case 0x42:
+            case (char)0x42:
                 RiseDownArrowEvent();
                 break;
-            case 0x43:
+            case (char)0x43:
                 RiseRightArrowEvent();
                 break;
-            case 0x44:
+            case (char)0x44:
                 RiseLeftArrowEvent();
                 break;
         }
@@ -289,7 +288,7 @@ public class TelnetKeyboard:KeyboardBase
         return State.Idle;
     }
 
-    private State EscBracketVtSequence(byte b)
+    private State EscBracketVtSequence(char b)
     {
         var c = (char)b;
         if (c == 0x7E)
@@ -311,7 +310,7 @@ public class TelnetKeyboard:KeyboardBase
         return State.Idle;
     }
 
-    private State IacWill(byte b)
+    private State IacWill(char b)
     {   
         //Debug.WriteLine($"IAC WILL {b:X}");
         
@@ -321,41 +320,40 @@ public class TelnetKeyboard:KeyboardBase
         return State.Idle;
     }
 
-    private static State IacDo(byte b)
+    private static State IacDo(char b)
     {
         //Debug.WriteLine($"IAC DO {b:X}");
         return State.Idle;
     }
 
-    private static State Esc(byte b)
+    private static State Esc(char b)
     {
         return b switch
         {
-            0x5B => State.EscBracket,
+            (char)0x5B => State.EscBracket,
             _ => State.Idle
         };
     }
 
-    private static State Iac(byte b)
+    private static State Iac(char b)
     {
         return b switch
         {
-            0xFD => State.IacDo,
-            0xFB => State.IacWill,
+            (char)0xFD => State.IacDo,
+            (char)0xFB => State.IacWill,
             _ => State.Idle
         };
     }
 
     private State IdleMode(char b)
     {
-        
-        if (char.IsDigit((char)b))
+        if (char.IsDigit(b))
         {
-            RiseDigitEvent((char)b);
+            RiseDigitEvent(b);
             return State.Idle;
         }
-
-        switch (b)
+        return State.Idle;
+        /*switch (b)
         {
             case 0x7F :
                 RiseEscapeEvent();
@@ -368,7 +366,7 @@ public class TelnetKeyboard:KeyboardBase
                 return State.EndLine;
             default:
                 return State.Idle;
-        }
+        }*/
     }
 }
 
