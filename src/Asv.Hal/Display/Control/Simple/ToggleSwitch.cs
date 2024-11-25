@@ -2,9 +2,9 @@
 
 public class ToggleSwitch:Control
 {
-    private bool _value;
-    private string _trueText = "on";
-    private string _falseText = "off";
+    protected bool _value;
+    protected string _trueText = "ВКЛ";
+    protected string _falseText = "ВЫКЛ";
 
     public ToggleSwitch(string? header = null)
     {
@@ -19,7 +19,7 @@ public class ToggleSwitch:Control
         }
     }
     public TextBlock Header { get; }
-    public bool Value
+    public virtual bool Value
     {
         get => _value;
         set
@@ -68,5 +68,27 @@ public class ToggleSwitch:Control
             e.IsHandled = true;
             Value = !Value;
         }
+    }
+}
+
+public class ToggleSwitchWithCallBack(string? header = null, Action<bool>? onOffCallBack = null) : ToggleSwitch(header)
+{
+    private bool _isInternalChanged;
+
+    public override bool Value
+    {
+        get => base.Value;
+        set
+        {
+            base.Value = value;
+            if (!_isInternalChanged) onOffCallBack?.Invoke(value);
+        }
+    }
+
+    public void SetOnOff(bool b)
+    {
+        _isInternalChanged = true;
+        Value = b;
+        _isInternalChanged = false;
     }
 }

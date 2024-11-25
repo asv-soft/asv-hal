@@ -3,11 +3,11 @@ namespace Asv.Hal;
 public abstract class GroupBox:Panel
 {
     private Control? _header;
-    protected GroupBox(string? header)
+    protected GroupBox(string? header, HorizontalPosition headerAlign = HorizontalPosition.Left)
     {
         if (header != null)
         {
-            Header = header;
+            Header = new TextBlock(header, headerAlign);
         }
     }
     public Control? Header

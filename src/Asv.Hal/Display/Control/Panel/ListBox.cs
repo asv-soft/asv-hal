@@ -2,7 +2,8 @@ using System.Diagnostics;
 
 namespace Asv.Hal;
 
-public class ListBox(string? header = null) : GroupBox(header)
+public class ListBox(string? header = null, HorizontalPosition headerAlign = HorizontalPosition.Left) 
+    : GroupBox(header, headerAlign)
 {
     private int _selectedIndex;
     private string _pointer = "->";
@@ -66,7 +67,7 @@ public class ListBox(string? header = null) : GroupBox(header)
         } 
     }
     
-    protected string GetItemPrefix(int index)
+    protected virtual string GetItemPrefix(int index)
     {
         return SelectedIndex == index ? $"{Pointer}{index + 1}." : $"{_emptyPointer}{index + 1}.";
     }

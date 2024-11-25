@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reactive.Linq;
 using Asv.Common;
 
@@ -17,6 +18,10 @@ public class Window: Control
     public Window(TimeProvider timeProvider, TimeSpan animationTick, IKeyboard keyboard,IScreen screen)
     {
         var uiTaskScheduler = new SingleThreadTaskScheduler("UI Thread").DisposeItWith(Disposable);
+        uiTaskScheduler.OnTaskUnhandledException += (sender, exception) =>
+        {
+            Console.WriteLine(exception);
+        };
         _uiTaskFactory = new TaskFactory(uiTaskScheduler);
         _timeProvider = timeProvider;
         _screen = screen;
@@ -39,6 +44,7 @@ public class Window: Control
             await _uiTaskFactory.StartNew(_=>Event(new AnimationTickEvent(this,_timeProvider)), null, DisposeCancel);
             if (Interlocked.CompareExchange(ref _renderRequested, 0, 1) != 0)
             {
+                //DebugRenderTree(this,0);
                 using var loop = _screen.BeginRenderLoop();
                 await _uiTaskFactory.StartNew(_=>Render(_screen), null, DisposeCancel);
             }
@@ -51,6 +57,22 @@ public class Window: Control
         {
             Interlocked.Exchange(ref _tickInProgress,0);
         }
+    }
+
+    private void DebugRenderTree(Control? control, int level)
+    {
+        if (control == null) return;
+        _screen.DebugWrite("|");
+        for (int i = 0; i < level; i++)
+        {
+            _screen.DebugWrite("-");    
+        }
+        _screen.DebugWriteLine($"{control} {(control.IsFocused? "<=" : String.Empty)}");
+        foreach (var child in control.VisualChildren)
+        {
+            DebugRenderTree(child, level +1);
+        }
+        
     }
 
     public override int Height => Current?.Height ?? 0;
@@ -67,10 +89,18 @@ public class Window: Control
         private set
         {
             if (_current == value) return;
+            if (_current != null)
+            {
+                _current.Event(new DetachEvent(this));
+            }
             RemoveVisualChild(_current);
             _current = value;
             AddVisualChild(value);
-            if (_current != null) _current.IsFocused = true;
+            if (_current != null)
+            {
+                _current.IsFocused = true;
+                _current.Event(new AttachEvent(this));
+            }
             Event(new RenderRequestEvent(this));
         }
     }
@@ -83,6 +113,8 @@ public class Window: Control
             if (_focused == value) return;
             var old = _focused;
             _focused = value;
+            _screen.Debug("FOCUS",$"{old}=>{_focused}");
+            Debug.WriteLine($"==>FOCUS:{old}=>{_focused}");
             _uiTaskFactory.StartNew(() =>
                 Event(new FocusUpdatedEvent(this, old, _focused)));
         }

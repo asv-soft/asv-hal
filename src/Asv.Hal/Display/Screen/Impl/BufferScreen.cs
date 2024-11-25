@@ -47,6 +47,21 @@ public abstract class BufferScreen : IScreen
         return System.Reactive.Disposables.Disposable.Create(EndRenderLoop);
     }
 
+    public virtual void Debug(string key, string value)
+    {
+        
+    }
+
+    public virtual void DebugWrite(string message)
+    {
+        
+    }
+
+    public virtual void DebugWriteLine(string message)
+    {
+        
+    }
+
     private void EndRenderLoop()
     {
         lock (_lock)

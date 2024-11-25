@@ -29,4 +29,28 @@ public class CompositeScreen : IScreen
     {
         return new CompositeDisposable(Screens.Select(screen => screen.BeginRenderLoop()));
     }
+
+    public void Debug(string key, string value)
+    {
+        foreach (var screen in Screens)
+        {
+            screen.Debug(key, value);
+        }
+    }
+
+    public void DebugWrite(string message)
+    {
+        foreach (var screen in Screens)
+        {
+            screen.DebugWrite(message);
+        }
+    }
+
+    public void DebugWriteLine(string message)
+    {
+        foreach (var screen in Screens)
+        {
+            screen.DebugWriteLine(message);
+        }
+    }
 }

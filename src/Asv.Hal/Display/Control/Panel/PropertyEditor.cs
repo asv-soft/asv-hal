@@ -4,7 +4,8 @@ namespace Asv.Hal;
 
 public class PropertyEditor:ListBox
 {
-    public PropertyEditor(string? header = null):base(header)
+    public PropertyEditor(string? header = null, HorizontalPosition headerAlign = HorizontalPosition.Left)
+        : base(header, headerAlign)
     {
         Pointer = string.Empty;
     }
@@ -45,6 +46,5 @@ public class PropertyEditor:ListBox
             }
             
         }
-       
     }
 }

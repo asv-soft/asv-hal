@@ -70,7 +70,7 @@ public abstract class Control:DisposableOnceWithCancel
     #region Visual tree
 
     private Control? VisualParent { get; set; }
-    private IReadOnlyList<Control> VisualChildren => Volatile.Read(ref _visualChildren);
+    public IReadOnlyList<Control> VisualChildren => Volatile.Read(ref _visualChildren);
 
     public void Event(RoutedEvent e)
     {
@@ -130,7 +130,10 @@ public abstract class Control:DisposableOnceWithCancel
     
     protected virtual void InternalOnEvent(RoutedEvent e)
     {
-        
+        if (e is DetachEvent det)
+        {
+            IsFocused = false;
+        }
     }
 
     public abstract int Width { get; }
@@ -140,5 +143,10 @@ public abstract class Control:DisposableOnceWithCancel
     protected void RiseRenderRequestEvent()
     {
         Event(new RenderRequestEvent(this));
+    }
+    
+    public override string ToString()
+    {
+        return GetType().Name;
     }
 }

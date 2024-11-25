@@ -29,6 +29,7 @@ public class Button: Control
         var click = new ButtonClickEvent(this);
         _onClick?.Invoke(click);
         if (click.IsHandled == false) Event(click);
+        IsFocused = false;
     }
     
     public Control? Content

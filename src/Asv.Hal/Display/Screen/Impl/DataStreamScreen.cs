@@ -3,8 +3,16 @@ using Asv.IO;
 
 namespace Asv.Hal.Impl;
 
-public class DataStreamScreen(IPort port, Size size) : BufferScreen(size)
+public class DataStreamScreen : BufferScreen
 {
+    private readonly IPort _port;
+
+    public DataStreamScreen(IPort port, Size size) : base(size)
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        _port = port;
+    }
+
     protected override unsafe void InternalRender(char[,] buffer)
     {
 
@@ -13,11 +21,12 @@ public class DataStreamScreen(IPort port, Size size) : BufferScreen(size)
         fixed (char* src = buffer)
         fixed (byte* dst = data)
         {
-            Encoding.ASCII.GetBytes(src, length, dst, length);    
+            // Encoding.ASCII.GetBytes(src, length, dst, length);    
+            Encoding.GetEncoding("windows-1251").GetBytes(src, length, dst, length);    
         }
             
-        port.Send([0x0A],1,default).Wait();
-        port.Send(data,length,default).Wait();
-        port.Send([0x0D],1,default).Wait();
+        _port.Send([0x0A],1,default).Wait();
+        _port.Send(data,length,default).Wait();
+        _port.Send([0x0D],1,default).Wait();
     }
 }

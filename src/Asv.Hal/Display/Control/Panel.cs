@@ -84,6 +84,8 @@ public class ControlCollection(Panel owner) : IList<Control>
             _items[index] = value;
         }
     }
+
+   
 }
 
 public abstract class Panel : Control
@@ -94,4 +96,9 @@ public abstract class Panel : Control
     }
 
     public ControlCollection Items { get; }
+
+    public override string ToString()
+    {
+        return $"{GetType().Name}[{Items.Count}]";
+    }
 }

@@ -13,7 +13,9 @@ public class PageSlider:Panel
             if (value <= 0) value = 0;
             var cnt = Items.Count;
             if (value >= cnt) value = cnt - 1;
+            if (SelectedPage != null) SelectedPage.IsFocused = false;
             _pageIndex = value;
+            if (SelectedPage != null) SelectedPage.IsFocused = true;
             RiseRenderRequestEvent();
         }
     }
@@ -23,6 +25,7 @@ public class PageSlider:Panel
     public override int Width => SelectedPage?.Width ?? 0;
     public override int Height => SelectedPage?.Height ?? 0;
 
+    
     public override void Render(IRenderContext context)
     {
         SelectedPage?.Render(context);
@@ -30,8 +33,17 @@ public class PageSlider:Panel
 
     protected override void InternalOnEvent(RoutedEvent e)
     {
+        if (e is AttachEvent)
+        {
+            IsFocused = false;
+            if (SelectedPage != null) SelectedPage.IsFocused = true;
+        }
         if (e is KeyDownEvent key)
         {
+            if (IsFocused)
+            {
+                if (SelectedPage != null) SelectedPage.IsFocused = true;
+            }
             if (key.Key.Type == KeyType.RightArrow)
             {
                 PageIndex++;
@@ -43,6 +55,10 @@ public class PageSlider:Panel
                 PageIndex--;
                 e.IsHandled = true;
             }
+            
+            var copy = e.Clone();
+            e.IsHandled = true;
+            SelectedPage?.Event(copy);
         }
     }
 }

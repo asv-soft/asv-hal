@@ -9,6 +9,7 @@ public class TelnetScreen : BufferScreen
 
     public TelnetScreen(IPort port, Size size) : base(size)
     {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         _port = port;
     }
 
@@ -19,7 +20,7 @@ public class TelnetScreen : BufferScreen
         fixed (char* src = buffer)
         fixed (byte* dst = data)
         {
-            Encoding.ASCII.GetBytes(src, length, dst, length);    
+            Encoding.GetEncoding("windows-1251").GetBytes(src, length, dst, length);    
         }
         
        

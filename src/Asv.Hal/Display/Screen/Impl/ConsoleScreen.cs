@@ -1,8 +1,13 @@
+using System.Collections.Concurrent;
+using System.Text;
+
 namespace Asv.Hal.Impl;
 
 public class ConsoleScreen(Size size) : BufferScreen(size)
 {
     private int _renderCount;
+    private ConcurrentDictionary<string, string> _debug = new();
+    private StringBuilder _sb = new();
 
     protected override void InternalRender(char[,] buffer)
     {
@@ -30,5 +35,28 @@ public class ConsoleScreen(Size size) : BufferScreen(size)
         }
         Console.WriteLine("╝");
         Console.Write($"Rendered: {_renderCount++}");
+        Console.WriteLine();
+        foreach (var item in _debug)
+        {
+            Console.WriteLine($"{item.Key,-20} = {item.Value,-20}");
+        }
+        Console.Write(_sb);
+        _sb.Clear();
+
+    }
+
+    public override void Debug(string key, string value)
+    {
+        _debug.AddOrUpdate(key, value,(k,v)=>value);
+    }
+
+    public override void DebugWrite(string message)
+    {
+        _sb.Append(message);
+    }
+
+    public override void DebugWriteLine(string message)
+    {
+        _sb.AppendLine(message);
     }
 }

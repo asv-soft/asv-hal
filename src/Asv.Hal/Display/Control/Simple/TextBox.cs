@@ -111,6 +111,7 @@ public class TextBox:Control
                 case KeyType.Enter:
                     IsFocused = false;
                     InternalOnEvent(new ValueEditedEvent(this, Text));
+                    Event(new ValueEditedEvent(this, Text));
                     break;
                 case KeyType.Digit or KeyType.Dot:
                     Text += key.Key.Value.ToString();

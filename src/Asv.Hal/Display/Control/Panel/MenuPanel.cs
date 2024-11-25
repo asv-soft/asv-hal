@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace Asv.Hal;
 
-public class MenuPanel(string? header = null) : ListBox(header)
+public class MenuPanel(string? header = null, HorizontalPosition headerAlign = HorizontalPosition.Left) : ListBox(header, headerAlign)
 {
     protected override void InternalOnEvent(RoutedEvent e)
     {
@@ -13,7 +13,11 @@ public class MenuPanel(string? header = null) : ListBox(header)
             switch (key.Key.Type)
             {
                 case KeyType.Enter:
-                    if (SelectedItem != null) SelectedItem.IsFocused = true;
+                    if (SelectedItem != null)
+                    {
+                        // SelectedItem.IsFocused = false;
+                        SelectedItem.IsFocused = true;
+                    }
                     e.IsHandled = true;
                     break;
                 case KeyType.LeftArrow:
