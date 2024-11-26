@@ -16,7 +16,7 @@ public class Button: Control
         {
             Content = new TextBlock(text,HorizontalPosition.Center)
             {
-                Background = '='
+                Background = ' '
             };
         }
     }

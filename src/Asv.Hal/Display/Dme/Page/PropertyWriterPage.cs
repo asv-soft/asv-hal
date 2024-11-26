@@ -10,6 +10,9 @@ public class PropertyWriterPage : GroupBox
     private readonly char _background = ScreenHelper.Empty;
     private double _propertyValue;
     private bool _isInternalChanged;
+    private readonly BlinkTextBlock _link;
+    private readonly string _blinkText = "***";
+
 
     public PropertyWriterPage(string? header, string? propertyName, IList<double> predefinedValues,
         Func<double, string> stringFormat, Action<bool>? onOffCallback = null, Action<double>? setCallback = null) : base(null)
@@ -19,6 +22,8 @@ public class PropertyWriterPage : GroupBox
         _predefinedValues = predefinedValues.Select((v, i) => new KeyValuePair<int,double>(i, v)).ToDictionary();
         _stringFormat = stringFormat;
         _setCallback = setCallback ?? (_ => { });
+        _link = new BlinkTextBlock { Align = HorizontalPosition.Right, IsVisible = true, Text = "***" };
+        Items.Add(_link);
     }
 
     public void ExternalUpdateValue(bool onOff)
@@ -35,6 +40,16 @@ public class PropertyWriterPage : GroupBox
     
     public string? PropertyName { get; }
     
+    public bool Link
+    {
+        get => _link.IsBlink;
+        set
+        {
+            _link.Text = value ? _blinkText : "";
+            _link.IsBlink = value;
+        }
+    }
+
     public double PropertyValue
     {
         get => _propertyValue;
@@ -67,6 +82,7 @@ public class PropertyWriterPage : GroupBox
         ctx.FillChar(0,1,startX,_background);
         ctx.WriteString(startX,1,v);
         ctx.FillChar(startX + v.Length,1,ctx.Size.Width - startX - v.Length,_background);
+        _link.Render(ctx.Crop(0, 2, ctx.Size.Width, 1));
     }
     
     protected override void InternalOnEvent(RoutedEvent e)

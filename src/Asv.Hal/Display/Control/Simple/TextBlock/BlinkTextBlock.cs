@@ -47,6 +47,7 @@ public class BlinkTextBlock:TextBlock
             {
                 _isBlinkFlag = !_isBlinkFlag;
                 _lastBlink = anim.TimeProvider.GetTimestamp();
+                RiseRenderRequestEvent();
             }
         }
     }

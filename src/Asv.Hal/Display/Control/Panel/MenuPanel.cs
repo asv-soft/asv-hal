@@ -21,8 +21,9 @@ public class MenuPanel(string? header = null, HorizontalPosition headerAlign = H
                     e.IsHandled = true;
                     break;
                 case KeyType.LeftArrow:
-                    SelectedIndex = 0;
-                    e.IsHandled = true;
+                    // SelectedIndex = 0;
+                    // e.IsHandled = true;
+                    Event(new LostFocusEvent(this));
                     break;
                 case KeyType.RightArrow:
                     SelectedIndex = Items.Count - 1;
