@@ -5,8 +5,8 @@ namespace Asv.Hal;
 public class Button: Control
 {
     private Control? _content;
-    private char? _left = '[';
-    private char? _right = ']';
+    private char? _left = ' ';
+    private char? _right = ' ';
     private readonly Action<ButtonClickEvent>? _onClick;
 
     public Button(string? text = null, Action<ButtonClickEvent>? onClick = null)
@@ -14,7 +14,7 @@ public class Button: Control
         _onClick = onClick;
         if (text != null)
         {
-            Content = new TextBlock(text,HorizontalPosition.Center)
+            Content = new TextBlock(text)
             {
                 Background = ' '
             };

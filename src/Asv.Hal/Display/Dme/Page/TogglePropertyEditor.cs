@@ -4,9 +4,9 @@ namespace Asv.Hal;
 
 public class TogglePropertyEditor : PropertyEditor
 {
-    public TogglePropertyEditor(string? header, Action<bool>? onOffCallback = null)
+    public TogglePropertyEditor(string? header, string trueText = "ON", string falseText = "OFF", Action<bool>? onOffCallback = null)
     {
-        Header = new ToggleSwitchWithCallBack(header, onOffCallback);
+        Header = new ToggleSwitchWithCallBack(header, trueText, falseText, onOffCallback);
     }
 
     public void ExternalUpdateValue(bool onOff)

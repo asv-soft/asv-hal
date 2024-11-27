@@ -13,15 +13,15 @@ public class StepIncrementPage : PropertyEditor
     private readonly Action<double>? _setCallback;
     private readonly Action<TextBox, double> _additionFiller;
 
-    public StepIncrementPage(string header, 
+    public StepIncrementPage(string header,string trueText, string falseText,  
         string valueHeader, string units, string stringFormat,
-        double defaultValue, double stepValue,
+        double defaultValue, string stepHeader, double stepValue,
         Func<double, double> valueValidator, Func<double, double> stepValidator, 
         TextBox? addition = null, Action<TextBox, double>? additionFiller = null, Action<bool>? onOffCallback = null, Action<double>? setCallback = null) : base(null)
     {
-        Header = new ToggleSwitchWithCallBack(header, onOffCallback);
+        Header = new ToggleSwitchWithCallBack(header, trueText, falseText, onOffCallback);
         _stringFormat = stringFormat;
-        _defaultValue = defaultValue;
+        _defaultValue = valueValidator(defaultValue);
         _stepValue = stepValue;
         _valueValidator = valueValidator;
         _stepValidator = stepValidator;
@@ -30,7 +30,7 @@ public class StepIncrementPage : PropertyEditor
 
         var param = new TextBox(valueHeader, units) { Text = valueValidator(defaultValue).ToString(stringFormat, CultureInfo.InvariantCulture) };
         Items.Add(param);
-        Items.Add(new TextBox("Шаг:", units) { Text = stepValidator(stepValue).ToString(stringFormat, CultureInfo.InvariantCulture) });
+        Items.Add(new TextBox(stepHeader, units) { Text = stepValidator(stepValue).ToString(stringFormat, CultureInfo.InvariantCulture) });
         if (addition == null) return;
         Items.Add(addition);
         _additionFiller(addition, defaultValue);

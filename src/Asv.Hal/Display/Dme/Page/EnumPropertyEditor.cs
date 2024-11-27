@@ -6,20 +6,20 @@ public class EnumPropertyEditor<TValue> : GroupBox where TValue : struct, Enum
 {
     private readonly Action<TValue> _setCallback;
 
-    public EnumPropertyEditor(string? header, string? enumHeader, TValue defaultValue, Func<TValue, string>? nameGetter = null, Action<bool>? onOffCallback = null, Action<TValue>? setCallback = null) : base(null)
+    public EnumPropertyEditor(string? header, string trueText, string falseText,  string? enumHeader, TValue defaultValue, Func<TValue, string>? nameGetter = null, Action<bool>? onOffCallback = null, Action<TValue>? setCallback = null) : base(null)
     {
         _setCallback = setCallback ?? (_ => { }) ;
-        Header = new ToggleSwitchWithCallBack(header, onOffCallback);
+        Header = new ToggleSwitchWithCallBack(header, trueText, falseText, onOffCallback);
         var item = new ComboBox<TValue>(enumHeader, nameGetter);
-        Items.Add(item);
         item.Value = defaultValue;
+        Items.Add(item);
     }
 
     public void ExternalUpdateValue(bool onOff)
     {
         ((ToggleSwitchWithCallBack)Header!).SetOnOff(onOff);
     }
-    private ComboBox<TValue>? Item => (ComboBox<TValue>)Items[0];
+    public ComboBox<TValue>? Item => Items.Count > 0 ? (ComboBox<TValue>)Items[0] : null;
 
     public void ExternalUpdateValue(TValue value)
     {
@@ -79,10 +79,12 @@ public class EnumPropertyEditor<TValue> : GroupBox where TValue : struct, Enum
     {
         if (Item == null) return;
         var prefix = "1.";
-        var startX = ctx.Size.Width - prefix.Length - Item.Width;
-        if (startX < 0) startX = 0;
+        // var startX = ctx.Size.Width - prefix.Length - Item.Width;
+        var startX = 0;
+        // if (startX < 0) startX = 0;
         ctx.WriteString(startX,0,prefix);
-        var availableSize = new Size(ctx.Width - startX, ctx.Size.Height);
-        Item.Render(ctx.Crop(startX, 0, availableSize));
+        // var availableSize = new Size(ctx.Width - 2, ctx.Size.Height);
+        // Item.Render(ctx.Crop(startX, 0, availableSize));
+        Item.Render(ctx);
     }
 }

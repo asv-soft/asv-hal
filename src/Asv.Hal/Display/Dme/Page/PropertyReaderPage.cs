@@ -2,17 +2,27 @@ using System.Globalization;
 
 namespace Asv.Hal;
 
+public enum SignalState
+{
+    NoSignal,
+    Normal,
+    Overload
+}
+
 public class PropertyReaderPage : GroupBox
 {
     private readonly string _stringFormat;
     private double _propertyValue;
     private readonly char _background = ScreenHelper.Empty;
     private readonly BlinkTextBlock _link;
-    private readonly string _blinkText = "***";
+    private readonly string _blinkNormalText = "***";
+    private readonly string _blinkOverloadText;
+    private SignalState _signal;
 
-    public PropertyReaderPage(string? header, string? propertyName, string stringFormat, Action<bool>? onOffCallback = null) : base(null)
+    public PropertyReaderPage(string? header, string trueText, string falseText,  string? propertyName, string stringFormat, string overloadText, Action<bool>? onOffCallback = null) : base(null)
     {
-        Header = new ToggleSwitchWithCallBack(header, onOffCallback);
+        _blinkOverloadText = overloadText;
+        Header = new ToggleSwitchWithCallBack(header, trueText, falseText, onOffCallback);
         _stringFormat = stringFormat;
         PropertyName = propertyName;
         _link = new BlinkTextBlock { Align = HorizontalPosition.Right, IsVisible = true, IsBlink = false, Text = "" };
@@ -37,18 +47,41 @@ public class PropertyReaderPage : GroupBox
         }
     }
 
-    public bool Link
+    public SignalState Signal
     {
-        get => _link.IsBlink;
+        get => _signal;
         set
         {
-            _link.Text = value ? _blinkText : "";
-            _link.IsBlink = value;
+            if (value == _signal) return;
+            _signal = value;
+            switch (_signal)
+            {
+                case SignalState.NoSignal:
+                    _link.Text = string.Empty;
+                    _link.IsBlink = false;
+                    break;
+                case SignalState.Normal:
+                    _link.Text = _blinkNormalText;
+                    _link.IsBlink = true;
+                    break;
+                case SignalState.Overload:
+                    _link.Text = _blinkOverloadText;
+                    _link.IsBlink = true;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(value), value, null);
+            }
         }
     }
 
     protected override void InternalOnEvent(RoutedEvent e)
     {
+        if (e is RenderRequestEvent rend && rend.Sender == _link && !IsFocused)
+        {
+            e.IsHandled = true;
+            return;
+        }
+        
         if (e is not KeyDownEvent { Key.Type: KeyType.Enter }) return;
         var copy = e.Clone();
         e.IsHandled = true;

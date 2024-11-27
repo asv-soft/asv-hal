@@ -3,16 +3,16 @@ namespace Asv.Hal;
 
 public class ComboBox<TValue> : Control where TValue : struct, Enum 
 {
-    private readonly Func<TValue, string> _nameGetter;
     private TValue _value;
     private readonly IDictionary<char, TValue> _availableValuesFromChar;
     private readonly IDictionary<TValue, int> _availableIndexesFromValue;
+    private readonly IDictionary<TValue, string> _availableTitlesFromValue;
     private readonly TValue[] _availableValues;
     private readonly char _background = ScreenHelper.Empty;
 
     public ComboBox(string? header, Func<TValue, string>? nameGetter = null)
     {
-        _nameGetter = nameGetter ?? (@enum => $"{@enum:G}") ;
+        nameGetter = nameGetter ?? (@enum => $"{@enum:G}") ;
         if (header != null)
         {
             AddVisualChild(Header = new TextBlock{Text = header});
@@ -23,6 +23,7 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
         }
         _availableValuesFromChar = Enum.GetValues<TValue>().Take(9).Select((v, i) => new KeyValuePair<char, TValue>($"{i + 1}"[0], v)).ToDictionary();
         _availableIndexesFromValue = Enum.GetValues<TValue>().Select((v, i) => new KeyValuePair<TValue, int>(v, i)).ToDictionary();
+        _availableTitlesFromValue = Enum.GetValues<TValue>().Select(v => new KeyValuePair<TValue, string>(v, nameGetter(v))).ToDictionary();
         _availableValues = Enum.GetValues<TValue>().ToArray();
     }
     
@@ -40,13 +41,14 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
         }
     }
 
-    public override int Width => Math.Max(Header.Width, _nameGetter(Value).Length);
+    public override int Width => Math.Max(Header.Width, _availableTitlesFromValue[Value].Length);
     public override int Height => 2;
     public override void Render(IRenderContext ctx)
     {
-        var strValue = _nameGetter(_value);
-        var headerStartX = ctx.Size.Width - Header.Width;
-        if (headerStartX < 0) headerStartX = 0;
+        var strValue = _availableTitlesFromValue[_value];
+        // var headerStartX = ctx.Size.Width - Header.Width;
+        var headerStartX = 2; // "1."
+        // if (headerStartX < 0) headerStartX = 0;
         Header.Render(ctx.Crop(headerStartX, 0, Header.Width, 1));
         var startX = (ctx.Size.Width - strValue.Length) / 2;
         ctx.FillChar(0,1,startX,_background);

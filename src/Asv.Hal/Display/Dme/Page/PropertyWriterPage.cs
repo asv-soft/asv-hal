@@ -11,18 +11,21 @@ public class PropertyWriterPage : GroupBox
     private double _propertyValue;
     private bool _isInternalChanged;
     private readonly BlinkTextBlock _link;
-    private readonly string _blinkText = "***";
+    private readonly string _blinkNormalText = "***";
+    private readonly string _blinkOverloadText;
+    private SignalState _signal;
 
 
-    public PropertyWriterPage(string? header, string? propertyName, IList<double> predefinedValues,
-        Func<double, string> stringFormat, Action<bool>? onOffCallback = null, Action<double>? setCallback = null) : base(null)
+    public PropertyWriterPage(string? header, string trueText, string falseText, string? propertyName, IList<double> predefinedValues,
+        Func<double, string> stringFormat, string overloadText, Action<bool>? onOffCallback = null, Action<double>? setCallback = null) : base(null)
     {
-        Header = new ToggleSwitchWithCallBack(header, onOffCallback);
+        _blinkOverloadText = overloadText;
+        Header = new ToggleSwitchWithCallBack(header, trueText, falseText, onOffCallback);
         PropertyName = propertyName;
         _predefinedValues = predefinedValues.Select((v, i) => new KeyValuePair<int,double>(i, v)).ToDictionary();
-        _stringFormat = stringFormat;
+        _stringFormat = (Func<double, string>)stringFormat.Clone();
         _setCallback = setCallback ?? (_ => { });
-        _link = new BlinkTextBlock { Align = HorizontalPosition.Right, IsVisible = true, Text = "***" };
+        _link = new BlinkTextBlock { Align = HorizontalPosition.Right, IsVisible = true, Text = "", IsBlink = false };
         Items.Add(_link);
     }
 
@@ -40,13 +43,30 @@ public class PropertyWriterPage : GroupBox
     
     public string? PropertyName { get; }
     
-    public bool Link
+    public SignalState Signal
     {
-        get => _link.IsBlink;
+        get => _signal;
         set
         {
-            _link.Text = value ? _blinkText : "";
-            _link.IsBlink = value;
+            if (value == _signal) return;
+            _signal = value;
+            switch (_signal)
+            {
+                case SignalState.NoSignal:
+                    _link.Text = string.Empty;
+                    _link.IsBlink = false;
+                    break;
+                case SignalState.Normal:
+                    _link.Text = _blinkNormalText;
+                    _link.IsBlink = true;
+                    break;
+                case SignalState.Overload:
+                    _link.Text = _blinkOverloadText;
+                    _link.IsBlink = true;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(value), value, null);
+            }
         }
     }
 
@@ -87,6 +107,12 @@ public class PropertyWriterPage : GroupBox
     
     protected override void InternalOnEvent(RoutedEvent e)
     {
+        if (e is RenderRequestEvent rend && rend.Sender == _link && !IsFocused)
+        {
+            e.IsHandled = true;
+            return;
+        }
+        
         if (e is KeyDownEvent key)
         {
             if (IsFocused)

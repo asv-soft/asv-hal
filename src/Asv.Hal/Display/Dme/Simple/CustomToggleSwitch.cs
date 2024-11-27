@@ -4,7 +4,7 @@ public class CustomToggleSwitch : ToggleSwitchWithCallBack
 {
     private readonly KeyType _eventKeyType;
 
-    public CustomToggleSwitch(KeyType eventKeyType, string? header = null, Action<bool>? onOffCallBack = null) : base(header, onOffCallBack)
+    public CustomToggleSwitch(KeyType eventKeyType, string? header = null, string trueText = "ON", string falseText = "OFF", Action<bool>? onOffCallBack = null) : base(header, trueText, falseText, onOffCallBack)
     {
         _eventKeyType = eventKeyType;
     }

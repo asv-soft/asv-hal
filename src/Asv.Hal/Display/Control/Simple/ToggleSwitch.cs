@@ -3,12 +3,13 @@
 public class ToggleSwitch:Control
 {
     protected bool _value;
-    protected string _trueText = "ВКЛ";
-    protected string _falseText = "ВЫКЛ";
+    protected string _trueText;
+    protected string _falseText;
 
-    public ToggleSwitch(string? header = null)
+    public ToggleSwitch(string? header = null, string trueText = "ON", string falseText = "OFF")
     {
-        
+        _trueText = trueText;
+        _falseText = falseText;
         if (header != null)
         {
             AddVisualChild(Header = new TextBlock{Text = header});
@@ -71,7 +72,7 @@ public class ToggleSwitch:Control
     }
 }
 
-public class ToggleSwitchWithCallBack(string? header = null, Action<bool>? onOffCallBack = null) : ToggleSwitch(header)
+public class ToggleSwitchWithCallBack(string? header = null, string trueText = "ON", string falseText = "OFF", Action<bool>? onOffCallBack = null) : ToggleSwitch(header, trueText, falseText)
 {
     private bool _isInternalChanged;
 
