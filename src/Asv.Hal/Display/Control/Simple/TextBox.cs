@@ -117,6 +117,9 @@ public class TextBox:Control
                     Text += key.Key.Value.ToString();
                     RiseRenderRequestEvent();
                     break;
+                // case KeyType.LeftArrow:
+                //     
+                //     break;
                 case KeyType.Escape:
                     Text = _lastValue;
                     IsFocused = false;
