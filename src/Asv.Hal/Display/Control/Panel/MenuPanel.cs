@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace Asv.Hal;
 
 public class MenuPanel(string? header = null, HorizontalPosition headerAlign = HorizontalPosition.Left) : ListBox(header, headerAlign)

@@ -9,7 +9,8 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="Asv.IO" Version="3.0.0-dev.4" />
+        <PackageReference Include="Asv.Common" Version="3.0.0-dev.8" />
+        <PackageReference Include="Asv.IO" Version="3.0.0-dev.8" />
         <PackageReference Include="System.Device.Gpio" Version="3.2.0" />
         <PackageReference Include="ZLogger" Version="2.5.5" />
     </ItemGroup>

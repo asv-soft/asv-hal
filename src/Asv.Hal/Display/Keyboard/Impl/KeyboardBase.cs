@@ -1,5 +1,5 @@
-using System.Reactive.Subjects;
 using Asv.Common;
+using R3;
 
 namespace Asv.Hal;
 
@@ -12,7 +12,7 @@ public class KeyboardBase:DisposableOnceWithCancel, IKeyboard
         _onKeyPress = new Subject<KeyValue>().DisposeItWith(Disposable);
     }
 
-    public IObservable<KeyValue> OnKeyPress => _onKeyPress;
+    public Observable<KeyValue> OnKeyPress => _onKeyPress;
 
     protected void RiseEnterEvent() => _onKeyPress.OnNext(new KeyValue(KeyType.Enter, null));
 

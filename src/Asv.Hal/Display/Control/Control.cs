@@ -1,5 +1,5 @@
-using System.Reactive.Subjects;
 using Asv.Common;
+using R3;
 
 namespace Asv.Hal;
 
@@ -98,7 +98,7 @@ public abstract class Control:DisposableOnceWithCancel
 
     
 
-    public IObservable<RoutedEvent> OnEvent => _onEvent ??= new Subject<RoutedEvent>().DisposeItWith(Disposable);
+    public Observable<RoutedEvent> OnEvent => _onEvent ??= new Subject<RoutedEvent>().DisposeItWith(Disposable);
 
     protected internal void AddVisualChild(Control? child)
     {

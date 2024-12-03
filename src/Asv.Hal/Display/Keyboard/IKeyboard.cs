@@ -1,8 +1,10 @@
+using R3;
+
 namespace Asv.Hal;
 
 public interface IKeyboard
 {
-    IObservable<KeyValue> OnKeyPress { get; }
+    Observable<KeyValue> OnKeyPress { get; }
 }
 
 public enum KeyType

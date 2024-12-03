@@ -1,8 +1,8 @@
-using System.Reactive.Linq;
+using R3;
 
 namespace Asv.Hal;
 
 public class CompositeKeyboard(params IKeyboard[] keyboards) : IKeyboard
 {
-    public IObservable<KeyValue> OnKeyPress => keyboards.Select(x => x.OnKeyPress).Merge();
+    public Observable<KeyValue> OnKeyPress => keyboards.Select(x => x.OnKeyPress).Merge();
 }

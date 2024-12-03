@@ -1,3 +1,5 @@
+using R3;
+
 namespace Asv.Hal;
 
 public abstract class BufferScreen : IScreen
@@ -44,7 +46,7 @@ public abstract class BufferScreen : IScreen
     public IDisposable BeginRenderLoop()
     {
         InternalClear();
-        return System.Reactive.Disposables.Disposable.Create(EndRenderLoop);
+        return Disposable.Create(EndRenderLoop);
     }
 
     public virtual void Debug(string key, string value)

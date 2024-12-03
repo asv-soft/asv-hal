@@ -1,8 +1,7 @@
-using System.Diagnostics;
-using System.Reactive.Subjects;
 using System.Text;
 using Asv.Common;
 using Asv.IO;
+using R3;
 
 namespace Asv.Hal;
 
@@ -215,7 +214,7 @@ public class TelnetKeyboard:KeyboardBase
     public TelnetKeyboard(IDataStream port)
     {
         _port = port;
-        port.Subscribe(OnData).DisposeItWith(Disposable);
+        port.OnReceive.Subscribe(OnData).DisposeItWith(Disposable);
     }
 
     private void OnData(byte[] data)
@@ -378,12 +377,12 @@ public class DataStreamKeyBoard:KeyboardBase
     {
         var port = PortFactory.Create(cs);
         port.Enable();
-        port.Subscribe(OnData).DisposeItWith(Disposable);
+        port.OnReceive.Subscribe(OnData).DisposeItWith(Disposable);
     }
     
     public DataStreamKeyBoard(IDataStream port)
     {
-        port.Subscribe(OnData).DisposeItWith(Disposable);
+        port.OnReceive.Subscribe(OnData).DisposeItWith(Disposable);
     }
     
     private void OnData(byte[] data)
