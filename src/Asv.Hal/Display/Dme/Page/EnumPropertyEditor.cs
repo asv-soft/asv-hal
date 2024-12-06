@@ -6,10 +6,10 @@ public class EnumPropertyEditor<TValue> : GroupBox where TValue : struct, Enum
 {
     private readonly Action<TValue> _setCallback;
 
-    public EnumPropertyEditor(string? header, string trueText, string falseText,  string? enumHeader, TValue defaultValue, Func<TValue, string>? nameGetter = null, Action<bool>? onOffCallback = null, Action<TValue>? setCallback = null) : base(null)
+    public EnumPropertyEditor(string? header, string trueText, string falseText,  string? enumHeader, TValue defaultValue, Func<TValue, string>? nameGetter = null, Action<TValue>? setCallback = null) : base(null)
     {
         _setCallback = setCallback ?? (_ => { }) ;
-        Header = new ToggleSwitchWithCallBack(header, trueText, falseText, onOffCallback);
+        Header = new ToggleSwitch(header, trueText, falseText);
         var item = new ComboBox<TValue>(enumHeader, nameGetter);
         item.Value = defaultValue;
         Items.Add(item);
@@ -17,7 +17,7 @@ public class EnumPropertyEditor<TValue> : GroupBox where TValue : struct, Enum
 
     public void ExternalUpdateValue(bool onOff)
     {
-        ((ToggleSwitchWithCallBack)Header!).SetOnOff(onOff);
+        ((ToggleSwitch)Header!).Value = onOff;
     }
     public ComboBox<TValue>? Item => Items.Count > 0 ? (ComboBox<TValue>)Items[0] : null;
 

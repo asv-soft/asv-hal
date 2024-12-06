@@ -2,10 +2,10 @@
 
 public class ToggleSwitch:Control
 {
-    protected bool _value;
-    protected string _trueText;
-    protected string _falseText;
-
+    private bool _value;
+    private string _trueText;
+    private string _falseText;
+    
     public ToggleSwitch(string? header = null, string trueText = "ON", string falseText = "OFF")
     {
         _trueText = trueText;
@@ -19,8 +19,9 @@ public class ToggleSwitch:Control
             AddVisualChild(Header = new TextBlock());
         }
     }
-    public TextBlock Header { get; }
-    public virtual bool Value
+
+    protected TextBlock Header { get; }
+    public bool Value
     {
         get => _value;
         set
@@ -68,28 +69,7 @@ public class ToggleSwitch:Control
         {
             e.IsHandled = true;
             Value = !Value;
+            Event(new ToggleSwichEvent(this, _value));
         }
-    }
-}
-
-public class ToggleSwitchWithCallBack(string? header = null, string trueText = "ON", string falseText = "OFF", Action<bool>? onOffCallBack = null) : ToggleSwitch(header, trueText, falseText)
-{
-    private bool _isInternalChanged;
-
-    public override bool Value
-    {
-        get => base.Value;
-        set
-        {
-            base.Value = value;
-            if (!_isInternalChanged) onOffCallBack?.Invoke(value);
-        }
-    }
-
-    public void SetOnOff(bool b)
-    {
-        _isInternalChanged = true;
-        Value = b;
-        _isInternalChanged = false;
     }
 }

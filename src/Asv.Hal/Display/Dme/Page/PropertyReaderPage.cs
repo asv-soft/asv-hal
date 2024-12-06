@@ -19,10 +19,10 @@ public class PropertyReaderPage : GroupBox
     private readonly string _blinkOverloadText;
     private SignalState _signal;
 
-    public PropertyReaderPage(string? header, string trueText, string falseText,  string? propertyName, string stringFormat, string overloadText, Action<bool>? onOffCallback = null) : base(null)
+    public PropertyReaderPage(string? header, string trueText, string falseText,  string? propertyName, string stringFormat, string overloadText) : base(null)
     {
         _blinkOverloadText = overloadText;
-        Header = new ToggleSwitchWithCallBack(header, trueText, falseText, onOffCallback);
+        Header = new ToggleSwitch(header, trueText, falseText);
         _stringFormat = stringFormat;
         PropertyName = propertyName;
         _link = new BlinkTextBlock { Align = HorizontalPosition.Right, IsVisible = true, IsBlink = false, Text = "" };
@@ -31,7 +31,7 @@ public class PropertyReaderPage : GroupBox
 
     public void ExternalUpdateValue(bool onOff)
     {
-        ((ToggleSwitchWithCallBack)Header!).SetOnOff(onOff);
+        ((ToggleSwitch)Header!).Value = onOff;
     }
     public string? PropertyName { get; }
 

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 
 namespace Asv.Hal;
 
@@ -14,16 +15,18 @@ public class PropertyWriterPage : GroupBox
     private readonly string _blinkNormalText = "***";
     private readonly string _blinkOverloadText;
     private SignalState _signal;
+    private readonly Dictionary<int,string> _predefinedTitles;
 
 
     public PropertyWriterPage(string? header, string trueText, string falseText, string? propertyName, IList<double> predefinedValues,
-        Func<double, string> stringFormat, string overloadText, Action<bool>? onOffCallback = null, Action<double>? setCallback = null) : base(null)
+        Func<double, string> stringFormat, string overloadText, Action<double>? setCallback = null) : base(null)
     {
         _blinkOverloadText = overloadText;
-        Header = new ToggleSwitchWithCallBack(header, trueText, falseText, onOffCallback);
+        Header = new ToggleSwitch(header, trueText, falseText);
         PropertyName = propertyName;
         _predefinedValues = predefinedValues.Select((v, i) => new KeyValuePair<int,double>(i, v)).ToDictionary();
         _stringFormat = (Func<double, string>)stringFormat.Clone();
+        _predefinedTitles = predefinedValues.Select((v, i) => new KeyValuePair<int,string>(i, _stringFormat(v))).ToDictionary();
         _setCallback = setCallback ?? (_ => { });
         _link = new BlinkTextBlock { Align = HorizontalPosition.Right, IsVisible = true, Text = "", IsBlink = false };
         Items.Add(_link);
@@ -31,7 +34,7 @@ public class PropertyWriterPage : GroupBox
 
     public void ExternalUpdateValue(bool onOff)
     {
-        ((ToggleSwitchWithCallBack)Header!).SetOnOff(onOff);
+        ((ToggleSwitch)Header!).Value = onOff;
     }
     
     public void ExternalUpdateValue(double value)
@@ -86,18 +89,20 @@ public class PropertyWriterPage : GroupBox
     protected override void InternalRenderChildren(IRenderContext ctx)
     {
         ctx.WriteString(0,0,PropertyName);
+        string? v = null;
         try
         {
             var val = _predefinedValues.First(
-                v => Math.Abs(Math.Round(v.Value) - Math.Round(_propertyValue)) < 0.1);
+                pv => Math.Abs(Math.Round(pv.Value) - Math.Round(_propertyValue)) < 0.1);
             ctx.WriteString(PropertyName?.Length ?? 0,0, $" ({val.Key + 1})");
+            v = _predefinedTitles.FirstOrDefault(x => x.Key == val.Key).Value;
         }
         catch (Exception)
         {
             // ignored
         }
 
-        var v = _stringFormat(PropertyValue);
+        v ??= _stringFormat(PropertyValue);
         var startX = (ctx.Size.Width - v.Length) / 2;
         ctx.FillChar(0,1,startX,_background);
         ctx.WriteString(startX,1,v);

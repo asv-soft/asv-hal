@@ -3,6 +3,7 @@ namespace Asv.Hal;
 public class PageSlider:Panel
 {
     private int _pageIndex;
+    private bool _isEditingProcess;
 
     public int PageIndex
     {
@@ -33,32 +34,49 @@ public class PageSlider:Panel
 
     protected override void InternalOnEvent(RoutedEvent e)
     {
-        if (e is AttachEvent)
+        switch (e)
         {
-            IsFocused = false;
-            if (SelectedPage != null) SelectedPage.IsFocused = true;
-        }
-        if (e is KeyDownEvent key)
-        {
-            if (IsFocused)
+            case ValueEditingProcessEvent { Sender: TextBox }:
+                _isEditingProcess = true;
+                break;
+            case ValueEditedEvent:
+                _isEditingProcess = false;
+                break;
+            case AttachEvent:
             {
+                IsFocused = false;
                 if (SelectedPage != null) SelectedPage.IsFocused = true;
+                break;
             }
-            if (key.Key.Type == KeyType.RightArrow)
+            case KeyDownEvent key:
             {
-                PageIndex++;
-                e.IsHandled = true;
-            }
+                if (IsFocused)
+                {
+                    if (SelectedPage != null) SelectedPage.IsFocused = true;
+                }
+                if (key.Key.Type == KeyType.RightArrow)
+                {
+                    if (!_isEditingProcess)
+                    {
+                        PageIndex++;
+                        e.IsHandled = true;
+                    }
+                }
 
-            if (key.Key.Type == KeyType.LeftArrow)
-            {
-                PageIndex--;
-                e.IsHandled = true;
-            }
+                if (key.Key.Type == KeyType.LeftArrow)
+                {
+                    if (!_isEditingProcess)
+                    {
+                        PageIndex--;
+                        e.IsHandled = true;
+                    }
+                }
             
-            var copy = e.Clone();
-            e.IsHandled = true;
-            SelectedPage?.Event(copy);
+                var copy = e.Clone();
+                e.IsHandled = true;
+                SelectedPage?.Event(copy);
+                break;
+            }
         }
     }
 }

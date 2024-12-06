@@ -4,7 +4,7 @@ namespace Asv.Hal;
 public class ComboBox<TValue> : Control where TValue : struct, Enum 
 {
     private TValue _value;
-    private readonly IDictionary<char, TValue> _availableValuesFromChar;
+    // private readonly IDictionary<char, TValue> _availableValuesFromChar;
     private readonly IDictionary<TValue, int> _availableIndexesFromValue;
     private readonly IDictionary<TValue, string> _availableTitlesFromValue;
     private readonly TValue[] _availableValues;
@@ -12,7 +12,7 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
 
     public ComboBox(string? header, Func<TValue, string>? nameGetter = null)
     {
-        nameGetter = nameGetter ?? (@enum => $"{@enum:G}") ;
+        nameGetter ??= @enum => $"{@enum:G}" ;
         if (header != null)
         {
             AddVisualChild(Header = new TextBlock{Text = header});
@@ -21,7 +21,7 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
         {
             AddVisualChild(Header = new TextBlock());
         }
-        _availableValuesFromChar = Enum.GetValues<TValue>().Take(9).Select((v, i) => new KeyValuePair<char, TValue>($"{i + 1}"[0], v)).ToDictionary();
+        // _availableValuesFromChar = Enum.GetValues<TValue>().Take(9).Select((v, i) => new KeyValuePair<char, TValue>($"{i + 1}"[0], v)).ToDictionary();
         _availableIndexesFromValue = Enum.GetValues<TValue>().Select((v, i) => new KeyValuePair<TValue, int>(v, i)).ToDictionary();
         _availableTitlesFromValue = Enum.GetValues<TValue>().Select(v => new KeyValuePair<TValue, string>(v, nameGetter(v))).ToDictionary();
         _availableValues = Enum.GetValues<TValue>().ToArray();
@@ -63,10 +63,16 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
             switch (key.Key.Type)
             {
                 case KeyType.Digit:
-                    if (_availableValuesFromChar.TryGetValue(key.Key.Value ?? default, out var value))
+                    if (key.Key.Value == '1')
                     {
-                        Value = value;
+                        Value = _availableIndexesFromValue.TryGetValue(Value, out var idx)
+                            ? _availableValues[(idx + 1) % _availableValues.Length]
+                            : _availableValues[0];
                     }
+                    // if (_availableValuesFromChar.TryGetValue(key.Key.Value ?? default, out var value))
+                    // {
+                    //     Value = value;
+                    // }
                     e.IsHandled = true;
                     IsFocused = false;
                     break;

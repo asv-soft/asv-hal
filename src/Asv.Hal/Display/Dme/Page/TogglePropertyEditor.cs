@@ -6,12 +6,12 @@ public class TogglePropertyEditor : PropertyEditor
 {
     public TogglePropertyEditor(string? header, string trueText = "ON", string falseText = "OFF", Action<bool>? onOffCallback = null)
     {
-        Header = new ToggleSwitchWithCallBack(header, trueText, falseText, onOffCallback);
+        Header = new ToggleSwitch(header, trueText, falseText);
     }
 
     public void ExternalUpdateValue(bool onOff)
     {
-        ((ToggleSwitchWithCallBack)Header!).SetOnOff(onOff);
+        ((ToggleSwitch)Header!).Value = onOff;
     }
     protected override void InternalOnEvent(RoutedEvent e)
     {
@@ -46,7 +46,7 @@ public class TogglePropertyEditor : PropertyEditor
     {
         if (index < Items.Count)
         {
-            ((ToggleSwitchWithCallBack)Items[index]).SetOnOff(onOff);
+            ((ToggleSwitch)Items[index]).Value = onOff;
         }
     }
 }

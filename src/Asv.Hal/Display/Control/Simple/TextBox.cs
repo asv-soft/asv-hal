@@ -1,3 +1,5 @@
+using System.Net.Mime;
+
 namespace Asv.Hal;
 
 public class TextBox:Control
@@ -117,12 +119,23 @@ public class TextBox:Control
                     Text += key.Key.Value.ToString();
                     RiseRenderRequestEvent();
                     break;
-                // case KeyType.LeftArrow:
-                //     
-                //     break;
+                case KeyType.LeftArrow:
+                    if (Text?.Length > 0) Text = Text[..^1];   
+                    break;
                 case KeyType.Escape:
                     Text = _lastValue;
                     IsFocused = false;
+                    Event(new ValueEditedEvent(this, Text));
+                    break;
+                case KeyType.Function:
+                    if (Text?.Length > 0)
+                    {
+                        Text = Text[0] == '-' ? Text.Substring(1, Text.Length - 1) : $"-{Text}";
+                    }
+                    else
+                    {
+                        Text = "-";
+                    }
                     break;
             }
             e.IsHandled = true;

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using Asv.Common;
 using R3;
 
@@ -13,22 +14,43 @@ public class Window: Control
     private readonly TimeProvider _timeProvider;
     private readonly IScreen _screen;
     private Control _focused;
+    private readonly SingleThreadTaskScheduler _uiTaskScheduler;
+    private bool _isEditingProcess;
+    private bool _isCalibrationProcess;
 
 
-    public Window(TimeProvider timeProvider, TimeSpan animationTick, IKeyboard keyboard,IScreen screen)
+    public Window(TimeProvider timeProvider, TimeSpan animationTick, IKeyboard keyboard,IScreen screen, CultureInfo culture)
     {
-        var uiTaskScheduler = new SingleThreadTaskScheduler("UI Thread").DisposeItWith(Disposable);
-        uiTaskScheduler.OnTaskUnhandledException += (sender, exception) =>
+        _uiTaskScheduler = new SingleThreadTaskScheduler("UI Thread").DisposeItWith(Disposable);
+        _uiTaskScheduler.OnTaskUnhandledException += (sender, exception) =>
         {
             Console.WriteLine(exception);
         };
-        _uiTaskFactory = new TaskFactory(uiTaskScheduler);
+        _uiTaskFactory = new TaskFactory(_uiTaskScheduler);
         _timeProvider = timeProvider;
         _screen = screen;
         _focused = this;
         timeProvider.CreateTimer(Tick, null, animationTick, animationTick)
                 .DisposeItWith(Disposable);
+
+        _uiTaskFactory.StartNew(_ =>
+        {
+            _uiTaskScheduler.SchedulerThread.CurrentUICulture = culture;
+            _uiTaskScheduler.SchedulerThread.CurrentCulture = culture;
+        }, null, DisposeCancel);
+        
+        
+        
         keyboard.OnKeyPress.Subscribe(OnKeyDown).DisposeItWith(Disposable);
+    }
+
+    public void SetCulture(CultureInfo culture)
+    {
+        _uiTaskFactory.StartNew(_ =>
+        {
+            _uiTaskScheduler.SchedulerThread.CurrentUICulture = culture;
+            _uiTaskScheduler.SchedulerThread.CurrentCulture = culture;
+        }, null, DisposeCancel);
     }
 
     private void OnKeyDown(KeyValue keyValue)
@@ -89,17 +111,14 @@ public class Window: Control
         private set
         {
             if (_current == value) return;
-            if (_current != null)
-            {
-                _current.Event(new DetachEvent(this));
-            }
+            _current?.Event(new DetachEvent(this));
             RemoveVisualChild(_current);
             _current = value;
             AddVisualChild(value);
             if (_current != null)
             {
-                _current.IsFocused = true;
                 _current.Event(new AttachEvent(this));
+                _current.IsFocused = true;
             }
             Event(new RenderRequestEvent(this));
         }
@@ -129,17 +148,50 @@ public class Window: Control
 
     protected override void InternalOnEvent(RoutedEvent e)
     {
-        if (e is RenderRequestEvent)
+        if (e is KeyDownEvent && _isCalibrationProcess)
         {
             e.IsHandled = true;
-            Interlocked.Exchange(ref _renderRequested, 1);
+            return;
         }
-
-        if (e is GotFocusEvent focus)
+        
+        switch (e)
         {
-            Focused = focus.Sender;
+            case KeyDownEvent { Key.Type: KeyType.Function }:
+                if (!_isEditingProcess)
+                {
+                    _isCalibrationProcess = true;
+                    _timeProvider.CreateTimer(_ => {
+                        {
+                            _isCalibrationProcess = false;
+                            Event(new CalibrationStopEvent(this));
+                        } }, 
+                        null, TimeSpan.FromSeconds(3.5),
+                        Timeout.InfiniteTimeSpan).DisposeItWith(Disposable);
+                    e.IsHandled = true;
+                    Event(new CalibrationStartEvent(this));
+                }
+                break;
+            case KeyDownEvent { Key.Type: KeyType.Escape }:
+                if (_isEditingProcess)
+                {
+                    var newEv = e.Clone();
+                    e.IsHandled = true;
+                    Current?.Event(newEv);
+                }
+                break;
+            case ValueEditingProcessEvent { Sender: TextBox }:
+                _isEditingProcess = true;
+                break;
+            case ValueEditedEvent:
+                _isEditingProcess = false;
+                break;
+            case RenderRequestEvent:
+                e.IsHandled = true;
+                Interlocked.Exchange(ref _renderRequested, 1);
+                break;
+            case GotFocusEvent focus:
+                Focused = focus.Sender;
+                break;
         }
     }
-
-    
 }

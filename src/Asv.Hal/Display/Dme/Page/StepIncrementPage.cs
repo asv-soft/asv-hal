@@ -17,9 +17,9 @@ public class StepIncrementPage : PropertyEditor
         string valueHeader, string units, string stringFormat,
         double defaultValue, string stepHeader, double stepValue,
         Func<double, double> valueValidator, Func<double, double> stepValidator, 
-        TextBox? addition = null, Action<TextBox, double>? additionFiller = null, Action<bool>? onOffCallback = null, Action<double>? setCallback = null) : base(null)
+        TextBox? addition = null, Action<TextBox, double>? additionFiller = null, Action<double>? setCallback = null) : base(null)
     {
-        Header = new ToggleSwitchWithCallBack(header, trueText, falseText, onOffCallback);
+        Header = new ToggleSwitch(header, trueText, falseText);
         _stringFormat = stringFormat;
         _defaultValue = valueValidator(defaultValue);
         _stepValue = stepValue;
@@ -44,7 +44,7 @@ public class StepIncrementPage : PropertyEditor
 
     public void ExternalUpdateValue(bool onOff)
     {
-        ((ToggleSwitchWithCallBack)Header!).SetOnOff(onOff);
+        ((ToggleSwitch)Header!).Value = onOff;
     }
     
     public void ExternalUpdateValue(double value)
@@ -82,8 +82,12 @@ public class StepIncrementPage : PropertyEditor
                     case KeyType.Digit:
                         Debug.Assert(key.Key.Value.HasValue);
                         SelectedIndex = int.Parse(key.Key.Value.Value.ToString()) - 1;// numbering start with 1
-                        if (SelectedIndex < 2 && SelectedItem != null) SelectedItem.IsFocused = true;
                         e.IsHandled = true;
+                        if (SelectedIndex < 2 && SelectedItem != null)
+                        {
+                            SelectedItem.IsFocused = true;
+                            Event(new ValueEditingProcessEvent(SelectedItem));
+                        }
                         break;
                 }
             }
@@ -114,6 +118,7 @@ public class StepIncrementPage : PropertyEditor
                     step = s;
                 ((TextBox)Items[1]).Text = _stepValidator(step).ToString(_stringFormat, CultureInfo.InvariantCulture);
             }
+            // Event(rrr);
         }
     }
     

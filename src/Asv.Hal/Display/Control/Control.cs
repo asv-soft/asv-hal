@@ -1,3 +1,4 @@
+using System.Globalization;
 using Asv.Common;
 using R3;
 
@@ -96,7 +97,8 @@ public abstract class Control:DisposableOnceWithCancel
         }
     }
 
-    
+    // public CultureInfo CurrentCulture { get; set; }
+
 
     public Observable<RoutedEvent> OnEvent => _onEvent ??= new Subject<RoutedEvent>().DisposeItWith(Disposable);
 
