@@ -4,8 +4,14 @@ namespace Asv.Hal;
 
 public class TogglePropertyEditor : PropertyEditor
 {
-    public TogglePropertyEditor(string? header, string trueText = "ON", string falseText = "OFF", Action<bool>? onOffCallback = null)
+    private readonly Action<string> _exSetCallback;
+    private readonly Func<string?, string> _exValueValidator;
+    
+
+    public TogglePropertyEditor(string? header, string trueText = "ON", string falseText = "OFF", Action<bool>? onOffCallback = null, Func<string?, string>? exValueValidator = null, Action<string>? exSetCallback = null)
     {
+        _exSetCallback = exSetCallback ?? (_ => { });
+        _exValueValidator = exValueValidator ?? (_ => string.Empty);
         Header = new ToggleSwitch(header, trueText, falseText);
     }
 
@@ -19,6 +25,7 @@ public class TogglePropertyEditor : PropertyEditor
         {
             IsFocused = true;
         }
+        
         if (e is KeyDownEvent key)
         {
             if (IsFocused)
@@ -34,11 +41,40 @@ public class TogglePropertyEditor : PropertyEditor
                         Debug.Assert(key.Key.Value.HasValue);
                         SelectedIndex = int.Parse(key.Key.Value.Value.ToString()) - 1;
                         e.IsHandled = true;
-                        var copy = e.Clone();
-                        SelectedItem?.Event(copy);
+                        if (SelectedIndex == 2 && SelectedItem != null) 
+                        {
+                            SelectedItem.IsFocused = true;
+                            Event(new ValueEditingProcessEvent(SelectedItem));
+                        }
+                        else
+                        {
+                            var copy = e.Clone();
+                            SelectedItem?.Event(copy);    
+                        }
                         break;
                 }
             }
+            else
+            {
+                var copy = e.Clone();
+                e.IsHandled = true;
+                SelectedItem?.Event(copy);
+            }
+        }
+        
+        if (e is ValueEditedEvent rrr)
+        {
+            var value = _exValueValidator(rrr.Value);
+            WriteExValue(value);
+            _exSetCallback.Invoke(value);
+        }
+    }
+
+    private void WriteExValue(string value)
+    {
+        if (Items.Count > 2 && Items[2] is TextBox)
+        {
+            ((TextBox)Items[2]).Text = value;
         }
     }
 
@@ -48,5 +84,10 @@ public class TogglePropertyEditor : PropertyEditor
         {
             ((ToggleSwitch)Items[index]).Value = onOff;
         }
+    }
+
+    public void ExternalUpdateValue(ushort value)
+    {
+        if (Items.Count == 3) ((TextBox)Items[2]).Text = value.ToString();
     }
 }

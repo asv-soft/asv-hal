@@ -10,7 +10,7 @@ public class EnumPropertyEditor<TValue> : GroupBox where TValue : struct, Enum
     {
         _setCallback = setCallback ?? (_ => { }) ;
         Header = new ToggleSwitch(header, trueText, falseText);
-        var item = new ComboBox<TValue>(enumHeader, nameGetter);
+        var item = new SingleComboBox<TValue>(enumHeader, nameGetter);
         item.Value = defaultValue;
         Items.Add(item);
     }
@@ -19,7 +19,7 @@ public class EnumPropertyEditor<TValue> : GroupBox where TValue : struct, Enum
     {
         ((ToggleSwitch)Header!).Value = onOff;
     }
-    public ComboBox<TValue>? Item => Items.Count > 0 ? (ComboBox<TValue>)Items[0] : null;
+    public SingleComboBox<TValue>? Item => Items.Count > 0 ? (SingleComboBox<TValue>)Items[0] : null;
 
     public void ExternalUpdateValue(TValue value)
     {
