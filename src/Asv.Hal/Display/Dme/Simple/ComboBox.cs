@@ -46,9 +46,9 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
     public override int Height => 1;
     public override void Render(IRenderContext ctx)
     {
+        Header.Render(ctx.Crop(0, 0, Header.Width, 1));
         if (IsFocused && _isCaretVisible)
         {
-            Header.Render(ctx.Crop(0, 0, Header.Width, 1));
             var startX = ctx.Width - Header.Width;
             var backgroundWidth = ctx.Width - (Header.Width + 1);
             ctx.FillChar(startX,0,backgroundWidth,_background);
@@ -57,14 +57,12 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
         else
         {
             var strValue = _availableTitlesFromValue[_value];
-            Header.Render(ctx.Crop(0, 0, Header.Width, 1));
             var startX = ctx.Size.Width - Header.Width;
             var backgroundWidth = ctx.Size.Width - (Header.Width + strValue.Length);
             ctx.FillChar(startX,0,backgroundWidth,_background);
             startX = ctx.Size.Width - strValue.Length;
             ctx.WriteString(startX,0,strValue);
         }
-        
     }
 
     public char Cursor { get; set; } = '_';
@@ -128,8 +126,8 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
                     Event(new EnumValueEditedEvent<TValue>(this, Value));
                     break;
                 case KeyType.Escape:
-                    e.IsHandled = true;
                     Value = _lastValue;
+                    e.IsHandled = true;
                     IsFocused = false;
                     Event(new EnumValueEditedEvent<TValue>(this, Value));
                     break;

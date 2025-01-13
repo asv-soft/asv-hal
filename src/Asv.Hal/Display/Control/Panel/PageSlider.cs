@@ -42,7 +42,7 @@ public class PageSlider:Panel
             case ValueEditedEvent:
                 _isEditingProcess = false;
                 break;
-            case EnumValueEditedEvent<Enum>:
+            case EnumValueEditedEvent:
                 _isEditingProcess = false;
                 break;
             case AttachEvent:
