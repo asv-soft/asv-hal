@@ -33,7 +33,11 @@ public class PropertyEditor:ListBox
                     case KeyType.Digit:
                         Debug.Assert(key.Key.Value.HasValue);
                         SelectedIndex = int.Parse(key.Key.Value.Value.ToString()) - 1;// numbering start with 1
-                        if (SelectedItem != null) SelectedItem.IsFocused = true;
+                        if (SelectedItem != null)
+                        {
+                            SelectedItem.IsFocused = true;
+                            Event(new ValueEditingProcessEvent(SelectedItem));
+                        }
                         e.IsHandled = true;
                         break;
                 }

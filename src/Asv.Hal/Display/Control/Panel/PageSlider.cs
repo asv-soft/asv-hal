@@ -36,10 +36,13 @@ public class PageSlider:Panel
     {
         switch (e)
         {
-            case ValueEditingProcessEvent { Sender: TextBox }:
+            case ValueEditingProcessEvent: // { Sender: TextBox }:
                 _isEditingProcess = true;
                 break;
             case ValueEditedEvent:
+                _isEditingProcess = false;
+                break;
+            case EnumValueEditedEvent<Enum>:
                 _isEditingProcess = false;
                 break;
             case AttachEvent:
