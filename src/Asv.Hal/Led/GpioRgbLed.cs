@@ -7,10 +7,13 @@ namespace Asv.Hal;
 
 public class GpioRgbLedConfig
 {
+    public int? RedPinChip { get; set; } = 0;
     public int RedPin { get; set; } = 64;
     public bool RedInverted { get; set; }
+    public int? GreenPinChip { get; set; } = 0;
     public int GreenPin { get; set; } = 65;
     public bool GreenInverted { get; set; }
+    public int? BluePinChip { get; set; } = 0;
     public int BluePin { get; set; } = 66;
     public bool BlueInverted { get; set; }
 }
@@ -31,7 +34,7 @@ public class GpioRgbLed : IRgbLed
     private byte _blue;
 
 
-    public GpioRgbLed(GpioRgbLedConfig config, GpioController controller, ILogger? logger = null)
+    public GpioRgbLed(GpioRgbLedConfig config, IGpioProvider controller, ILogger? logger = null)
     {
         var log = logger ?? NullLogger.Instance;
         _redEnabled = config.RedInverted ? PinValue.High : PinValue.Low;
@@ -42,13 +45,13 @@ public class GpioRgbLed : IRgbLed
         _blueDisabled = config.BlueInverted ? PinValue.Low : PinValue.High;
         try
         {
-            _redPin = controller.OpenPin(config.RedPin, PinMode.Output);
-            _greenPin = controller.OpenPin(config.GreenPin, PinMode.Output);
-            _bluePin = controller.OpenPin(config.BluePin, PinMode.Output);
+            _redPin = controller.OpenPin(config.RedPin, PinMode.Output, config.RedPinChip);
+            _greenPin = controller.OpenPin(config.GreenPin, PinMode.Output, config.GreenPinChip);
+            _bluePin = controller.OpenPin(config.BluePin, PinMode.Output, config.BluePinChip);
             Red = 0;
             Green = 0;
             Blue = 0;
-            log.ZLogDebug($"Ctor RGB LED: Red={config.RedPin}[inverted:{config.RedInverted}], Green={config.GreenPin}[inverted:{config.GreenInverted}], Blue={config.BluePin}[inverted:{config.BlueInverted}]");
+            log.ZLogDebug($"Ctor RGB LED: Red={config.RedPin}[inverted:{config.RedInverted}, chip:{config.RedPinChip}], Green={config.GreenPin}[inverted:{config.GreenInverted}, chip:{config.GreenPinChip}], Blue={config.BluePin}[inverted:{config.BlueInverted}, chip:{config.BluePinChip}]");
         }
         catch (Exception e)
         {
