@@ -5,5 +5,5 @@ namespace Asv.Hal;
 
 public interface IGpioProvider
 {
-    GpioPin OpenPin(int pinNumber, PinMode mode, int? chipNumber);
+    GpioPin OpenPin(int pinNumber, PinMode mode, int? chipNumber = null);
 }
