@@ -3,7 +3,6 @@ namespace Asv.Hal;
 public class NullLed :IRgbLed
 {
     public static IRgbLed Instance { get; } = new NullLed();
-
     public NullLed() 
     {
         
