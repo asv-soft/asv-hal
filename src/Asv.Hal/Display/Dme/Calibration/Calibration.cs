@@ -53,7 +53,7 @@ public class Calibration : Control
     {
         _text.Render(ctx.Crop(2, 2, _text.Width, 1));
         _progress.Render(ctx.Crop(_text.Width + 2, 2, ctx.Width - (_text.Width + 5), 1));
-        _progress.Render(ctx.Crop(_text.Width + 2, 2, ctx.Width - (_text.Width + 5), 1));
+        // _progress.Render(ctx.Crop(_text.Width + 2, 2, ctx.Width - (_text.Width + 5), 1));
         _unit.Render(ctx.Crop(ctx.Width - 3, 2, 1, 1));
     }
     
@@ -63,7 +63,7 @@ public class Calibration : Control
         {
             if (_startTime == null)
             {
-                _startTime = anim.TimeProvider.GetTimestamp(); 
+                _startTime = anim.TimeProvider.GetTimestamp();
             }
             else
             {
