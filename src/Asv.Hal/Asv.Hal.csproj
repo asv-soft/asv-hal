@@ -20,7 +20,7 @@
         <PackageReference Include="Asv.Common" Version="$(AsvCommonVersion)" />
         <PackageReference Include="Asv.IO" Version="$(AsvCommonVersion)" />
         <PackageReference Include="System.Device.Gpio" Version="3.2.0" />
-        <PackageReference Include="ZLogger" Version="2.5.5" />
+        <PackageReference Include="ZLogger" Version="2.5.10" />
     </ItemGroup>
 
 </Project>
