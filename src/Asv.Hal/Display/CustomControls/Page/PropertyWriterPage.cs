@@ -14,12 +14,8 @@ public class PropertyWriterPage : GroupBox
     private readonly char _background = ScreenHelper.Empty;
     private double _propertyValue;
     private bool _isInternalChanged;
-    private readonly BlinkTextBlock _link;
-    private readonly string _blinkNormalText = "***";
     private readonly double _min;
     private readonly double _max;
-    private readonly string _blinkOverloadText;
-    private SignalState _signal;
     private readonly Dictionary<int,string> _predefinedTitles;
     private bool _isEditingProcess;
     private string? _text;
@@ -27,19 +23,16 @@ public class PropertyWriterPage : GroupBox
 
 
     public PropertyWriterPage(string? header, string trueText, string falseText, string? propertyName, IList<double> predefinedValues, double min, double max,
-        Func<double, string> stringFormat, string overloadText, Action<double>? setCallback = null) : base(null)
+        Func<double, string> stringFormat, Action<double>? setCallback = null) : base(null)
     {
         _min = min;
         _max = max;
-        _blinkOverloadText = overloadText;
         Header = new ToggleSwitch(header, trueText, falseText);
         PropertyName = propertyName;
         _predefinedValues = predefinedValues.Select((v, i) => new KeyValuePair<int,double>(i, v)).ToDictionary();
         _stringFormat = (Func<double, string>)stringFormat.Clone();
         _predefinedTitles = predefinedValues.Select((v, i) => new KeyValuePair<int,string>(i, _stringFormat(v))).ToDictionary();
         _setCallback = setCallback ?? (_ => { });
-        _link = new BlinkTextBlock { Align = HorizontalPosition.Right, IsVisible = true, Text = "", IsBlink = false };
-        Items.Add(_link);
     }
 
     public void ExternalUpdateValue(bool onOff)
@@ -56,33 +49,6 @@ public class PropertyWriterPage : GroupBox
     
     public string? PropertyName { get; }
     
-    public SignalState Signal
-    {
-        get => _signal;
-        set
-        {
-            if (value == _signal) return;
-            _signal = value;
-            switch (_signal)
-            {
-                case SignalState.NoSignal:
-                    _link.Text = string.Empty;
-                    _link.IsBlink = false;
-                    break;
-                case SignalState.Normal:
-                    _link.Text = _blinkNormalText;
-                    _link.IsBlink = true;
-                    break;
-                case SignalState.Overload:
-                    _link.Text = _blinkOverloadText;
-                    _link.IsBlink = true;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(value), value, null);
-            }
-        }
-    }
-
     public TimeSpan BlinkTime
     {
         get => _blinkTime;
@@ -150,17 +116,10 @@ public class PropertyWriterPage : GroupBox
         ctx.FillChar(0,1,startX,_background);
         ctx.WriteString(startX,1,v);
         ctx.FillChar(startX + v.Length,1,ctx.Size.Width - startX - v.Length,_background);
-        _link.Render(ctx.Crop(0, 2, ctx.Size.Width, 1));
     }
     
     protected override void InternalOnEvent(RoutedEvent e)
     {
-        if (e is RenderRequestEvent rend && rend.Sender == _link && !IsFocused)
-        {
-            e.IsHandled = true;
-            return;
-        }
-
         if (e is ValueEditedEvent rrr && rrr.Sender == this)
         {
             if (string.IsNullOrWhiteSpace(rrr.Value)) return;
