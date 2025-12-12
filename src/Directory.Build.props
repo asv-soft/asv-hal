@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
-    <ProductVersion>1.0.8-dev.8</ProductVersion>
+    <ProductVersion>1.0.8-dev.9</ProductVersion>
     <TargetFrameworksValue>net9.0;net10.0</TargetFrameworksValue>
-    <AsvCommonVersion>3.4.0-dev.1</AsvCommonVersion>
+    <AsvCommonVersion>3.4.0-dev.5</AsvCommonVersion>
   </PropertyGroup>
 </Project>
