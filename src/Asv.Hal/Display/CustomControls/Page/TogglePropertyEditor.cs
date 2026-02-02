@@ -8,7 +8,7 @@ public class TogglePropertyEditor : PropertyEditor
     private readonly Func<string?, string> _exValueValidator;
     
 
-    public TogglePropertyEditor(string? header, string trueText = "ON", string falseText = "OFF", Action<bool>? onOffCallback = null, Func<string?, string>? exValueValidator = null, Action<string>? exSetCallback = null)
+    public TogglePropertyEditor(string? header, string trueText = "ON", string falseText = "OFF", Func<string?, string>? exValueValidator = null, Action<string>? exSetCallback = null)
     {
         _exSetCallback = exSetCallback ?? (_ => { });
         _exValueValidator = exValueValidator ?? (_ => string.Empty);

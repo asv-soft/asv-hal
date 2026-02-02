@@ -109,7 +109,7 @@ public class SwitchMode : InfoPage
                     _switchModeDelay.TotalMicroseconds)
                 {
                     _state = ChangeModeState.Complete;
-                    Event(new SetModeCompleteEvent(this, IsEnabled));
+                    Event(new SwitchModeCompleteEvent(this, IsEnabled));
                 }
                 break;
             case ChangeModeState.Complete:
