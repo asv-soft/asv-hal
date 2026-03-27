@@ -123,13 +123,14 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
                 case KeyType.Enter:
                     e.IsHandled = true;
                     IsFocused = false;
+                    _lastValue = Value;
                     Event(new EnumValueEditedEvent<TValue>(this, Value));
                     break;
                 case KeyType.Escape:
                     Value = _lastValue;
                     e.IsHandled = true;
                     IsFocused = false;
-                    Event(new EnumValueEditedEvent<TValue>(this, Value));
+                    // Event(new EnumValueEditedEvent<TValue>(this, Value));
                     break;
             }
         }

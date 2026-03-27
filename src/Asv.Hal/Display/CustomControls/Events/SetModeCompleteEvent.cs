@@ -2,5 +2,5 @@
 
 public class SetModeCompleteEvent(Control sender, bool isOn) : RoutedEvent(sender, RoutingStrategy.Bubble)
 {
-    
+    public bool IsOn { get; } = isOn;
 }

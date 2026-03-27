@@ -70,7 +70,7 @@ public abstract class Control:DisposableOnceWithCancel
     
     #region Visual tree
 
-    private Control? VisualParent { get; set; }
+    public Control? VisualParent { get; set; }
     public IReadOnlyList<Control> VisualChildren => Volatile.Read(ref _visualChildren);
 
     public void Event(RoutedEvent e)
