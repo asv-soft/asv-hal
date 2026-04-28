@@ -12,8 +12,8 @@ public class InfoPage : GroupBox
         var stringNum = 0;
         foreach (var item in Items)
         {
-            item.Render(ctx.Crop(0, stringNum, new Size(ctx.Width, 1)));
-            stringNum++;
+            item.Render(ctx.Crop(0, stringNum, new Size(ctx.Width, item.Height)));
+            stringNum += item.Height;
         }
     }
 }

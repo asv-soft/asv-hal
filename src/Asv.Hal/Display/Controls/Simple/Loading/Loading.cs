@@ -32,7 +32,7 @@ public class Loading : Control
 
     public override void Render(IRenderContext ctx)
     {
-        _text.Render(ctx.Crop(0,1,ctx.Width,1));
-        _progress.Render(ctx.Crop(0,2,ctx.Width,1));
+        _text.Render(ctx.Crop(0,0,ctx.Width,1));
+        _progress.Render(ctx.Crop(0,1,ctx.Width,1));
     }
 }
