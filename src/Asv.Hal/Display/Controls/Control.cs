@@ -5,7 +5,7 @@ using R3;
 namespace Asv.Hal;
 
 
-public abstract class Control:DisposableOnceWithCancel
+public abstract class Control:DisposableOnceWithCancel, ISupportRoutedEvents<Control>
 {
     // (Avoid zero-length array allocations.) The identity of these arrays matters, so we can't use the shared Array.Empty<T>() instance
     private static readonly Control[] Disposed = [];
@@ -13,11 +13,14 @@ public abstract class Control:DisposableOnceWithCancel
     private bool _isVisible = true;
     private Subject<RoutedEvent>? _onEvent;
     private bool _isFocused;
+    private readonly IRoutedEventController<Control> _events;
 
     public static implicit operator Control(string text) => new TextBlock(text);
 
     protected Control()
     {
+        _events = new RoutedEventController<Control>(this).DisposeItWith(Disposable);
+        _events.Catch<RoutedEvent>(HandleModelingEvent).DisposeItWith(Disposable);
         Disposable.AddAction(()=>Volatile.Write(ref _visualChildren, Disposed));
     }
 
@@ -72,6 +75,15 @@ public abstract class Control:DisposableOnceWithCancel
 
     public Control? VisualParent { get; set; }
     public IReadOnlyList<Control> VisualChildren => Volatile.Read(ref _visualChildren);
+    public IRoutedEventController<Control> Events => _events;
+
+    Control? ISupportParent<Control>.Parent
+    {
+        get => VisualParent;
+        set => VisualParent = value;
+    }
+
+    IEnumerable<Control> ISupportChildren<Control>.GetChildren() => VisualChildren;
 
     public void Event(RoutedEvent e)
     {
@@ -95,6 +107,19 @@ public abstract class Control:DisposableOnceWithCancel
         {
             IsFocused = false;
         }
+    }
+
+    public ValueTask EventAsync(RoutedEvent e, CancellationToken cancel = default)
+    {
+        return this.Rise(e, cancel);
+    }
+
+    private ValueTask HandleModelingEvent(Control owner, RoutedEvent e, CancellationToken cancel)
+    {
+        InternalOnEvent(e);
+        if (e.IsHandled) return ValueTask.CompletedTask;
+        _onEvent?.OnNext(e);
+        return ValueTask.CompletedTask;
     }
 
     // public CultureInfo CurrentCulture { get; set; }

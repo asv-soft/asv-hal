@@ -1,19 +1,14 @@
 namespace Asv.Hal;
 
-
-public enum RoutingStrategy
+public abstract class RoutedEvent : AsyncRoutedEvent<Control>
 {
-    Bubble,
-    Tunnel
-}
-public abstract class RoutedEvent(Control sender, RoutingStrategy strategy)
-{
-    public Control Sender { get; } = sender;
-    public RoutingStrategy Strategy { get; } = strategy;
-    public bool IsHandled { get; set; }
+    protected RoutedEvent(Control sender, RoutingStrategy strategy)
+        : base(sender, strategy)
+    {
+    }
+    
     public virtual RoutedEvent Clone()
     {
         return (RoutedEvent)MemberwiseClone();
     }
-    
 }
