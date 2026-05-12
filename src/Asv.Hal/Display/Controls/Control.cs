@@ -49,11 +49,13 @@ public abstract class Control:DisposableOnceWithCancel, ISupportRoutedEvents<Con
             if (_isFocused)
             {
                 OnGotFocus();
+                if (_isFocused == false) return;
                 Event(new GotFocusEvent(this));
             }
             else
             {
                 OnLostFocus();
+                if (_isFocused) return;
                 Event(new LostFocusEvent(this));
             }
         }

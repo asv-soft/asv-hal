@@ -18,6 +18,43 @@ app.Run(args);
 public class AppCommands
 {
     /// <summary>
+    /// Simple console-only button example.
+    /// </summary>
+    /// <param name="width">-w, Console screen width.</param>
+    /// <param name="height">-h, Console screen height.</param>
+    [Command("button")]
+    public void Button(int width = 32, int height = 4)
+    {
+        using var keyboard = new ConsoleKeyboard();
+        var screen = new ConsoleScreen(new Size(width, height));
+        using var wnd = new Window(
+            TimeProvider.System,
+            TimeSpan.FromMilliseconds(100),
+            keyboard,
+            screen,
+            CultureInfo.GetCultureInfo("ru"));
+
+        var clickCount = 0;
+        var page = new MenuPanel("Пример кнопки", HorizontalPosition.Center)
+        {
+            Items =
+            {
+                new Button("Нажмите Enter", click =>
+                {
+                    clickCount++;
+                    click.Button.Content = new TextBlock($"Нажато: {clickCount}", HorizontalPosition.Center)
+                    {
+                        Background = ' '
+                    };
+                })
+            }
+        };
+
+        wnd.GoTo(page);
+        WaitForCancel();
+    }
+
+    /// <summary>
     /// 
     /// </summary>
     /// <param name="cs">-cs, Connection string to hardware display and keyboard. Empty by default.</param>
@@ -62,13 +99,13 @@ public class AppCommands
 
         
         
+        WaitForCancel();
+    }
+    
+    private static void WaitForCancel()
+    {
         var tcs = new TaskCompletionSource();
-        Console.CancelKeyPress += (_, _) =>
-        {
-            tcs.TrySetResult();
-        };
+        Console.CancelKeyPress += (_, _) => tcs.TrySetResult();
         tcs.Task.Wait();
     }
-
-    
 }

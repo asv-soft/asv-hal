@@ -1,3 +1,5 @@
+using R3;
+
 namespace Asv.Hal.Test.Display;
 
 public class ControlModelingEventTests
@@ -16,8 +18,28 @@ public class ControlModelingEventTests
             return ValueTask.CompletedTask;
         });
 
-        await child.EventAsync(new RenderRequestEvent(child));
+        await child.EventAsync(new RenderRequestEvent(child), TestContext.Current.CancellationToken);
 
         Assert.True(handled);
+    }
+
+    [Fact]
+    public void Button_Focus_Should_Not_Raise_GotFocus_After_Button_Clears_Focus()
+    {
+        var button = new Button("button");
+        var gotFocus = false;
+        var lostFocus = false;
+
+        button.OnEvent.Subscribe(e =>
+        {
+            if (e is GotFocusEvent) gotFocus = true;
+            if (e is LostFocusEvent) lostFocus = true;
+        });
+
+        button.IsFocused = true;
+
+        Assert.False(button.IsFocused);
+        Assert.False(gotFocus);
+        Assert.True(lostFocus);
     }
 }

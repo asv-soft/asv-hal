@@ -1,13 +1,12 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
-using Xunit.Abstractions;
 using Moq;
 
 namespace Asv.Hal.Test.Led;
 
 public class LedAnimationTests
 {
-    private IRgbLed _led;
+    private IRgbLed _led = null!;
     private FakeTimeProvider _timeProvider = new();
     private TimeSpan _tick;
     private readonly ITestOutputHelper _output;
@@ -29,7 +28,7 @@ public class LedAnimationTests
         for (int i = 0; i < record.Length; i++)
         {
             fakeTimeProvider.Advance(animationTick); 
-            await Task.Delay(10); 
+            await Task.Delay(10, TestContext.Current.CancellationToken); 
         }
         
         ledMock.Verify(led => led.Set(0, byte.MaxValue, 0), Times.Once); 
