@@ -22,36 +22,63 @@ public class AppCommands
     /// </summary>
     /// <param name="width">-w, Console screen width.</param>
     /// <param name="height">-h, Console screen height.</param>
+    /// <param name="tcpPort">-p, Optional TCP server port for terminal connection. Disabled by default.</param>
     [Command("button")]
-    public void Button(int width = 32, int height = 4)
+    public void Button(int width = 32, int height = 4, int tcpPort = 0)
     {
         using var keyboard = new ConsoleKeyboard();
-        var screen = new ConsoleScreen(new Size(width, height));
+        var size = new Size(width, height);
+        var consoleScreen = new ConsoleScreen(size);
+        IScreen screen = consoleScreen;
+        IKeyboard input = keyboard;
+        IPort? tcpServer = null;
+        TelnetKeyboard? telnetKeyboard = null;
+
+        if (tcpPort > 0)
+        {
+            tcpServer = PortFactory.Create($"tcp://127.0.0.1:{tcpPort}?srv=true")
+                ?? throw new InvalidOperationException($"TCP server port '{tcpPort}' was not created.");
+            tcpServer.Enable();
+            screen = new CompositeScreen(
+                consoleScreen,
+                new TelnetScreen(tcpServer, size));
+            telnetKeyboard = new TelnetKeyboard(tcpServer);
+            input = new CompositeKeyboard(keyboard, telnetKeyboard);
+        }
+
         using var wnd = new Window(
             TimeProvider.System,
             TimeSpan.FromMilliseconds(100),
-            keyboard,
+            input,
             screen,
             CultureInfo.GetCultureInfo("ru"));
 
-        var clickCount = 0;
-        var page = new MenuPanel("Пример кнопки", HorizontalPosition.Center)
+        try
         {
-            Items =
+            var clickCount = 0;
+            var page = new MenuPanel("Пример кнопки", HorizontalPosition.Center)
             {
-                new Button("Нажмите Enter", click =>
+                Items =
                 {
-                    clickCount++;
-                    click.Button.Content = new TextBlock($"Нажато: {clickCount}", HorizontalPosition.Center)
+                    new Button("Нажмите Enter", click =>
                     {
-                        Background = ' '
-                    };
-                })
-            }
-        };
+                        clickCount++;
+                        click.Button.Content = new TextBlock($"Нажато: {clickCount}", HorizontalPosition.Center)
+                        {
+                            Background = ' '
+                        };
+                    })
+                }
+            };
 
-        wnd.GoTo(page);
-        WaitForCancel();
+            wnd.GoTo(page);
+            WaitForCancel();
+        }
+        finally
+        {
+            telnetKeyboard?.Dispose();
+            (tcpServer as IDisposable)?.Dispose();
+        }
     }
 
     /// <summary>
