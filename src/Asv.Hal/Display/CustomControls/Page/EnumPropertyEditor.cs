@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Asv.Common;
 
 namespace Asv.Hal;
 
@@ -8,6 +9,9 @@ public class EnumPropertyEditor<TValue> : GroupBox where TValue : struct, Enum
 
     public EnumPropertyEditor(string? header, string trueText, string falseText,  string? enumHeader, TValue defaultValue, Func<TValue, string>? nameGetter = null, Action<TValue>? setCallback = null) : base(null)
     {
+        Events.Catch<LostFocusEvent>(OnLostFocusEvent).DisposeItWith(Disposable);
+        Events.Catch<EnumValueEditedEvent<TValue>>(OnEnumValueEditedEvent).DisposeItWith(Disposable);
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
         _setCallback = setCallback ?? (_ => { }) ;
         Header = new ToggleSwitch(header, trueText, falseText);
         var item = new SingleComboBox<TValue>(enumHeader, nameGetter);
@@ -26,51 +30,55 @@ public class EnumPropertyEditor<TValue> : GroupBox where TValue : struct, Enum
         if (Item != null) Item.Value = value;
     }
     
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnLostFocusEvent(LostFocusEvent e)
     {
-        if (e is LostFocusEvent focus && focus.Sender == Item)
+        if (e.Sender == Item)
         {
             IsFocused = true;
         }
+    }
 
-        if (e is EnumValueEditedEvent<TValue> edit && edit.Sender == Item)
+    private void OnEnumValueEditedEvent(EnumValueEditedEvent<TValue> e)
+    {
+        if (e.Sender == Item)
         {
-            _setCallback.Invoke(edit.Value);
+            _setCallback.Invoke(e.Value);
         }
-        if (e is KeyDownEvent key)
+    }
+
+    private void OnKeyDownEvent(KeyDownEvent e)
+    {
+        if (IsFocused)
         {
-            if (IsFocused)
+            switch (e.Key.Type)
             {
-                switch (key.Key.Type)
-                {
-                    case KeyType.Enter:
-                        var copy = e.Clone();
-                        e.IsHandled = true;
-                        Header?.Event(copy);
-                        break;
-                    case KeyType.DownArrow:
-                        if (Item != null) Item.IsFocused = true;
-                        e.IsHandled = true;
-                        IsFocused = false;
-                        var copy1 = e.Clone();
-                        Item?.Event(copy1);
-                        break;
-                    case KeyType.UpArrow:
-                        if (Item != null) Item.IsFocused = true;
-                        e.IsHandled = true;
-                        IsFocused = false;
-                        var copy2 = e.Clone();
-                        Item?.Event(copy2);
-                        break;
-                    case KeyType.Digit:
-                        Debug.Assert(key.Key.Value.HasValue);
-                        if (Item != null) Item.IsFocused = true;
-                        e.IsHandled = true;
-                        IsFocused = false;
-                        var copy3 = e.Clone();
-                        Item?.Event(copy3);
-                        break;
-                }
+                case KeyType.Enter:
+                    var copy = e.Clone();
+                    e.IsHandled = true;
+                    Header?.Events.Rise(copy);
+                    break;
+                case KeyType.DownArrow:
+                    if (Item != null) Item.IsFocused = true;
+                    e.IsHandled = true;
+                    IsFocused = false;
+                    var copy1 = e.Clone();
+                    Item?.Events.Rise(copy1);
+                    break;
+                case KeyType.UpArrow:
+                    if (Item != null) Item.IsFocused = true;
+                    e.IsHandled = true;
+                    IsFocused = false;
+                    var copy2 = e.Clone();
+                    Item?.Events.Rise(copy2);
+                    break;
+                case KeyType.Digit:
+                    Debug.Assert(e.Key.Value.HasValue);
+                    if (Item != null) Item.IsFocused = true;
+                    e.IsHandled = true;
+                    IsFocused = false;
+                    var copy3 = e.Clone();
+                    Item?.Events.Rise(copy3);
+                    break;
             }
         }
     }

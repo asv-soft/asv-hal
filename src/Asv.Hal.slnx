@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="../.github/workflows/release-action.yml" />
+    <File Path="../.github/workflows/release-debug-version.yml" />
+    <File Path="../README.md" />
+    <File Path=".aiassistant/rules/comments.md" />
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Project Path="Asv.Hal.Shell/Asv.Hal.Shell.csproj" />
+  <Project Path="Asv.Hal.Test/Asv.Hal.Test.csproj" />
+  <Project Path="Asv.Hal/Asv.Hal.csproj" />
+</Solution>

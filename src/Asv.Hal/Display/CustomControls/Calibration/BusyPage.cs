@@ -1,4 +1,6 @@
-﻿namespace Asv.Hal;
+using Asv.Common;
+
+namespace Asv.Hal;
 
 public class BusyPage : Control
 {
@@ -10,14 +12,14 @@ public class BusyPage : Control
     // private readonly string[] _progress2 = ["--------==", "-------==-", "------==--", "-----==---", "----==----", "---==-----", "--==------", "-==-------", "==--------", "=--------="];
     // private readonly string[] _progress1 = ["*  ", " * ", "  *"];
     // private readonly string[] _progress2 = ["  *", " * ", "*  "];
-    private uint _progressIndex = 0;
-    private uint _index = 0;
+    private uint _progressIndex;
+    private uint _index;
     private readonly TextBlock _text1;
     private readonly TextBlock _text2;
 
-
     public BusyPage(string text)
     {
+        Events.Catch<AnimationTickEvent>(OnAnimationTickEvent).DisposeItWith(Disposable);
         _titleText = text;
         AddVisualChild(_text = new TextBlock
         {
@@ -43,21 +45,16 @@ public class BusyPage : Control
         _text.Render(ctx.Crop(0, 1, ctx.Width, 1));
         _text1.Render(ctx.Crop(0, 2, ctx.Width, 1));
         _text2.Render(ctx.Crop(0, 3, ctx.Width, 1));
-        
     }
     
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnAnimationTickEvent(AnimationTickEvent e)
     {
-        if (e is AnimationTickEvent anim)
+        ++_index;
+        if (_index % 2 == 0)
         {
-            ++_index;
-            if (_index % 2 == 0)
-            {
-                ++_progressIndex;
-                _text1.Text = $"{_progress1[_progressIndex % _progress1.Length]}";
-                _text2.Text = $"{_progress2[_progressIndex % _progress2.Length]}";
-            }
-            
+            ++_progressIndex;
+            _text1.Text = $"{_progress1[_progressIndex % _progress1.Length]}";
+            _text2.Text = $"{_progress2[_progressIndex % _progress2.Length]}";
         }
     }
     

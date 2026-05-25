@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using Asv.Common;
 
 namespace Asv.Hal;
 
@@ -25,6 +26,9 @@ public class PropertyWriterPage : GroupBox
     public PropertyWriterPage(string? header, string trueText, string falseText, string? propertyName, IList<double> predefinedValues, double min, double max,
         Func<double, string> stringFormat, Action<double>? setCallback = null) : base(null)
     {
+        Events.Catch<ValueEditedEvent>(OnValueEditedEvent).DisposeItWith(Disposable);
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
+        Events.Catch<AnimationTickEvent>(OnAnimationTickEvent).DisposeItWith(Disposable);
         _min = min;
         _max = max;
         Header = new ToggleSwitch(header, trueText, falseText);
@@ -118,138 +122,139 @@ public class PropertyWriterPage : GroupBox
         ctx.FillChar(startX + v.Length,1,ctx.Size.Width - startX - v.Length,_background);
     }
     
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnValueEditedEvent(ValueEditedEvent e)
     {
-        if (e is ValueEditedEvent rrr && rrr.Sender == this)
+        if (e.Sender == this)
         {
-            if (string.IsNullOrWhiteSpace(rrr.Value)) return;
-            if (double.TryParse(rrr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var value))
+            if (string.IsNullOrWhiteSpace(e.Value)) return;
+            if (double.TryParse(e.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var value))
             {
                 if (value < _min) value = _min;
                 if (value > _max) value = _max;
                 PropertyValue = value;
             }
         }
-        
-        if (e is KeyDownEvent key)
+    }
+
+    private void OnKeyDownEvent(KeyDownEvent e)
+    {
+        if (IsFocused)
         {
-            if (IsFocused)
+            switch (e.Key.Type)
             {
-                switch (key.Key.Type)
-                {
-                    case KeyType.LeftArrow:
-                        if (_isEditingProcess)
+                case KeyType.LeftArrow:
+                    if (_isEditingProcess)
+                    {
+                        if (_text?.Length > 0) _text = _text[..^1];
+                        RiseRenderRequestEvent();
+                        e.IsHandled = true;
+                    }
+                    break;
+                case KeyType.Escape:
+                    if (_isEditingProcess)
+                    {
+                        _text = _lastValue;
+                        _isCaretVisible = false;
+                        _isEditingProcess = false;
+                        RiseRenderRequestEvent();
+                        Events.Rise(new ValueEditedEvent(this, _text));
+                        e.IsHandled = true;
+                    }
+                    break;
+                case KeyType.Function:
+                    if (_isEditingProcess)
+                    {
+                        if (_text?.Length > 0)
                         {
-                            if (_text?.Length > 0) _text = _text[..^1];
-                            RiseRenderRequestEvent();
-                            e.IsHandled = true;
-                        }
-                        break;
-                    case KeyType.Escape:
-                        if (_isEditingProcess)
-                        {
-                            _text = _lastValue;
-                            _isCaretVisible = false;
-                            _isEditingProcess = false;
-                            RiseRenderRequestEvent();
-                            InternalOnEvent(new ValueEditedEvent(this, _text));
-                            Event(new ValueEditedEvent(this, _text));
-                            e.IsHandled = true;
-                        }
-                        break;
-                    case KeyType.Function:
-                        if (_isEditingProcess)
-                        {
-                            if (_text?.Length > 0)
-                            {
-                                _text = _text[0] == '-' ? _text.Substring(1, _text.Length - 1) : $"-{_text}";
-                            }
-                            else
-                            {
-                                _text = "-";
-                            }
-                            RiseRenderRequestEvent();
-                            e.IsHandled = true;
-                        }
-                        break;
-                    case KeyType.Enter:
-                        if (_isEditingProcess)
-                        {
-                            _isCaretVisible = false;
-                            _isEditingProcess = false;
-                            RiseRenderRequestEvent();
-                            InternalOnEvent(new ValueEditedEvent(this, _text));
-                            Event(new ValueEditedEvent(this, _text));
+                            _text = _text[0] == '-' ? _text.Substring(1, _text.Length - 1) : $"-{_text}";
                         }
                         else
                         {
-                            var copy = e.Clone();
-                            Header?.Event(copy);    
+                            _text = "-";
                         }
+                        RiseRenderRequestEvent();
                         e.IsHandled = true;
-                        break;
-                    case KeyType.DownArrow:
-                        var index1 = GetNearestValue(PropertyValue, _predefinedValues) - 1;
-                        if (index1 < 0) index1 = _predefinedValues.Count - 1;
-                        PropertyValue = _predefinedValues[index1];
-                        _text = PropertyValue.ToString("F", CultureInfo.InvariantCulture);
-                        e.IsHandled = true;
-                        break;
-                    case KeyType.UpArrow:
-                        var index2 = GetNearestValue(PropertyValue, _predefinedValues) + 1;
-                        if (index2 > _predefinedValues.Count - 1) index2 = 0;
-                        PropertyValue = _predefinedValues[index2];
-                        _text = PropertyValue.ToString("F", CultureInfo.InvariantCulture);
-                        e.IsHandled = true;
-                        break;
-                    case KeyType.Digit:
-                        Debug.Assert(key.Key.Value.HasValue);
-                        var digit = int.Parse(key.Key.Value.Value.ToString());
-                        if (_isEditingProcess)
+                    }
+                    break;
+                case KeyType.Enter:
+                    if (_isEditingProcess)
+                    {
+                        _isCaretVisible = false;
+                        _isEditingProcess = false;
+                        RiseRenderRequestEvent();
+                        Events.Rise(new ValueEditedEvent(this, _text));
+                    }
+                    else
+                    {
+                        var copy = e.Clone();
+                        Header?.Events.Rise(copy);    
+                    }
+                    e.IsHandled = true;
+                    break;
+                case KeyType.DownArrow:
+                    var index1 = GetNearestValue(PropertyValue, _predefinedValues) - 1;
+                    if (index1 < 0) index1 = _predefinedValues.Count - 1;
+                    PropertyValue = _predefinedValues[index1];
+                    _text = PropertyValue.ToString("F", CultureInfo.InvariantCulture);
+                    e.IsHandled = true;
+                    break;
+                case KeyType.UpArrow:
+                    var index2 = GetNearestValue(PropertyValue, _predefinedValues) + 1;
+                    if (index2 > _predefinedValues.Count - 1) index2 = 0;
+                    PropertyValue = _predefinedValues[index2];
+                    _text = PropertyValue.ToString("F", CultureInfo.InvariantCulture);
+                    e.IsHandled = true;
+                    break;
+                case KeyType.Digit:
+                    Debug.Assert(e.Key.Value.HasValue);
+                    var digit = int.Parse(e.Key.Value.Value.ToString());
+                    if (_isEditingProcess)
+                    {
+                        _text += e.Key.Value.ToString();
+                        RiseRenderRequestEvent();
+                    }
+                    else
+                    {
+                        switch (digit)
                         {
-                            _text += key.Key.Value.ToString();
-                            RiseRenderRequestEvent();
+                            case 0:
+                                _isEditingProcess = true;
+                                _lastValue = _text;
+                                _text = "";
+                                _isCaretVisible = true;
+                                RiseRenderRequestEvent();
+                                Events.Rise(new ValueEditingProcessEvent(this));
+                                break;
+                            case > 0 when digit <= _predefinedValues.Count:
+                                PropertyValue = _predefinedValues[digit - 1];
+                                _text = PropertyValue.ToString("F", CultureInfo.InvariantCulture);
+                                break;
                         }
-                        else
-                        {
-                            switch (digit)
-                            {
-                                case 0:
-                                    _isEditingProcess = true;
-                                    _lastValue = _text;
-                                    _text = "";
-                                    _isCaretVisible = true;
-                                    RiseRenderRequestEvent();
-                                    Event(new ValueEditingProcessEvent(this));
-                                    break;
-                                case > 0 when digit <= _predefinedValues.Count:
-                                    PropertyValue = _predefinedValues[digit - 1];
-                                    _text = PropertyValue.ToString("F", CultureInfo.InvariantCulture);
-                                    break;
-                            }
-                        }
-                        
+                    }
+                    
+                    e.IsHandled = true;
+                    break;
+                case KeyType.Dot:
+                    if (_isEditingProcess)
+                    {
+                        if (!string.IsNullOrEmpty(_text)) _text = _text.Replace(".", "");
+                        _text += e.Key.Value.ToString();
+                        RiseRenderRequestEvent();
                         e.IsHandled = true;
-                        break;
-                    case KeyType.Dot:
-                        if (_isEditingProcess)
-                        {
-                            if (!string.IsNullOrEmpty(_text)) _text = _text.Replace(".", "");
-                            _text += key.Key.Value.ToString();
-                            RiseRenderRequestEvent();
-                            e.IsHandled = true;
-                        }
-                        break;
-                }
+                    }
+                    break;
             }
         }
-        
-        if (e is AnimationTickEvent anim && IsFocused)
+    }
+
+    private void OnAnimationTickEvent(AnimationTickEvent e)
+    {
+        if (IsFocused)
         {
-            if (anim.TimeProvider.GetElapsedTime(_lastBlink) > BlinkTime)
+            if (e.TimeProvider.GetElapsedTime(_lastBlink) > BlinkTime)
             {
                 _isCaretVisible = !_isCaretVisible;
-                _lastBlink = anim.TimeProvider.GetTimestamp();
+                _lastBlink = e.TimeProvider.GetTimestamp();
                 RiseRenderRequestEvent();
             }
         }

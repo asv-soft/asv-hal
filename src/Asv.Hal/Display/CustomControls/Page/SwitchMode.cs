@@ -1,5 +1,6 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.RegularExpressions;
+using Asv.Common;
 
 namespace Asv.Hal;
 
@@ -33,6 +34,7 @@ public class SwitchMode : InfoPage
     public SwitchMode(string modeName, string onValue, string offValue, bool defaultValue, int width,
         TimeSpan switchModeDelay) : base(string.Empty)
     {
+        Events.Catch<AnimationTickEvent>(OnAnimationTickEvent).DisposeItWith(Disposable);
         _switchModeDelay = switchModeDelay;
         _onValue = !string.IsNullOrWhiteSpace(onValue) ? onValue[..Math.Min(onValue.Length,width)] : "On"[..Math.Min("On".Length,width)];
         _offValue = !string.IsNullOrWhiteSpace(offValue) ? offValue[..Math.Min(offValue.Length,width)] : "Off"[..Math.Min("Off".Length,width)];
@@ -94,22 +96,20 @@ public class SwitchMode : InfoPage
         Items.Add(_value);
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnAnimationTickEvent(AnimationTickEvent e)
     {
-        base.InternalOnEvent(e);
-        if (e is not AnimationTickEvent anim) return;
         switch (_state)
         {
             case ChangeModeState.JustNow:
-                _startTime = anim.TimeProvider.GetTimestamp();
+                _startTime = e.TimeProvider.GetTimestamp();
                 _state = ChangeModeState.InProgress;
                 break;
             case ChangeModeState.InProgress:
-                if (anim.TimeProvider.GetElapsedTime(_startTime).TotalMicroseconds >=
+                if (e.TimeProvider.GetElapsedTime(_startTime).TotalMicroseconds >=
                     _switchModeDelay.TotalMicroseconds)
                 {
                     _state = ChangeModeState.Complete;
-                    Event(new SwitchModeCompleteEvent(this, IsEnabled));
+                    Events.Rise(new SwitchModeCompleteEvent(this, IsEnabled));
                 }
                 break;
             case ChangeModeState.Complete:

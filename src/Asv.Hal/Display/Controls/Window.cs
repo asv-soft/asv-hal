@@ -30,6 +30,12 @@ public class Window: Control
         _timeProvider = timeProvider;
         _screen = screen;
         _focused = this;
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
+        Events.Catch<ValueEditingProcessEvent>(OnValueEditingProcessEvent).DisposeItWith(Disposable);
+        Events.Catch<ValueEditedEvent>(OnValueEditedEvent).DisposeItWith(Disposable);
+        Events.Catch<EnumValueEditedEvent>(OnEnumValueEditedEvent).DisposeItWith(Disposable);
+        Events.Catch<RenderRequestEvent>(OnRenderRequestEvent).DisposeItWith(Disposable);
+        Events.Catch<GotFocusEvent>(OnGotFocusEvent).DisposeItWith(Disposable);
         timeProvider.CreateTimer(Tick, null, animationTick, animationTick)
                 .DisposeItWith(Disposable);
 
@@ -55,7 +61,7 @@ public class Window: Control
 
     private void OnKeyDown(KeyValue keyValue)
     {
-        _uiTaskFactory.StartNew(_ => Event(new KeyDownEvent(this, keyValue)), null, DisposeCancel);
+        _uiTaskFactory.StartNew(_ =>Events.Rise(new KeyDownEvent(this, keyValue)), null, DisposeCancel);
     }
 
     private async void Tick(object? state)
@@ -63,7 +69,7 @@ public class Window: Control
         if (Interlocked.Exchange(ref _tickInProgress,1) != 0) return;
         try
         {
-            await _uiTaskFactory.StartNew(_=>Event(new AnimationTickEvent(this,_timeProvider)), null, DisposeCancel);
+            await _uiTaskFactory.StartNew(_=>Events.Rise(new AnimationTickEvent(this,_timeProvider)), null, DisposeCancel);
             if (Interlocked.CompareExchange(ref _renderRequested, 0, 1) != 0)
             {
                 //DebugRenderTree(this,0);
@@ -111,16 +117,16 @@ public class Window: Control
         private set
         {
             if (_current == value) return;
-            _current?.Event(new DetachEvent(this));
+            _current?.Events.Rise(new DetachEvent(this));
             RemoveVisualChild(_current);
             _current = value;
             AddVisualChild(value);
             if (_current != null)
             {
-                _current.Event(new AttachEvent(this));
+                _current.Events.Rise(new AttachEvent(this));
                 _current.IsFocused = true;
             }
-            Event(new RenderRequestEvent(this));
+           Events.Rise(new RenderRequestEvent(this));
         }
     }
 
@@ -135,7 +141,7 @@ public class Window: Control
             _screen.Debug("FOCUS",$"{old}=>{_focused}");
             Debug.WriteLine($"==>FOCUS:{old}=>{_focused}");
             _uiTaskFactory.StartNew(() =>
-                Event(new FocusUpdatedEvent(this, old, _focused)));
+               Events.Rise(new FocusUpdatedEvent(this, old, _focused)));
         }
     }
 
@@ -146,55 +152,65 @@ public class Window: Control
     
     public TaskFactory UiTaskFactory => _uiTaskFactory;
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnKeyDownEvent(KeyDownEvent e)
     {
-        if (e is KeyDownEvent && _isCalibrationProcess)
+        if (_isCalibrationProcess)
         {
             e.IsHandled = true;
             return;
         }
         
-        switch (e)
+        switch (e.Key.Type)
         {
-            case KeyDownEvent { Key.Type: KeyType.Function }:
+            case KeyType.Function:
                 if (!_isEditingProcess)
                 {
                     _isCalibrationProcess = true;
                     _timeProvider.CreateTimer(_ => {
                         {
                             _isCalibrationProcess = false;
-                            Event(new CalibrationStopEvent(this));
+                           Events.Rise(new CalibrationStopEvent(this));
                         } }, 
                         null, TimeSpan.FromSeconds(3.5),
                         Timeout.InfiniteTimeSpan).DisposeItWith(Disposable);
                     e.IsHandled = true;
-                    Event(new CalibrationStartEvent(this));
+                   Events.Rise(new CalibrationStartEvent(this));
                 }
                 break;
-            case KeyDownEvent { Key.Type: KeyType.Escape }:
+            case KeyType.Escape:
                 if (_isEditingProcess)
                 {
                     var newEv = e.Clone();
                     e.IsHandled = true;
-                    Current?.Event(newEv);
+                    Current?.Events.Rise(newEv);
                 }
                 break;
-            case ValueEditingProcessEvent: // { Sender: TextBox }:
-                _isEditingProcess = true;
-                break;
-            case ValueEditedEvent:
-                _isEditingProcess = false;
-                break;
-            case EnumValueEditedEvent:
-                _isEditingProcess = false;
-                break;
-            case RenderRequestEvent:
-                e.IsHandled = true;
-                Interlocked.Exchange(ref _renderRequested, 1);
-                break;
-            case GotFocusEvent focus:
-                Focused = focus.Sender;
-                break;
         }
+    }
+
+    private void OnValueEditingProcessEvent(ValueEditingProcessEvent e)
+    {
+        _isEditingProcess = true;
+    }
+
+    private void OnValueEditedEvent(ValueEditedEvent e)
+    {
+        _isEditingProcess = false;
+    }
+
+    private void OnEnumValueEditedEvent(EnumValueEditedEvent e)
+    {
+        _isEditingProcess = false;
+    }
+
+    private void OnRenderRequestEvent(RenderRequestEvent e)
+    {
+        e.IsHandled = true;
+        Interlocked.Exchange(ref _renderRequested, 1);
+    }
+
+    private void OnGotFocusEvent(GotFocusEvent e)
+    {
+        Focused = e.Sender;
     }
 }

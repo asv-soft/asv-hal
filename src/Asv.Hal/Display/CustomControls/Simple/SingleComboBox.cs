@@ -1,5 +1,6 @@
-namespace Asv.Hal;
+using Asv.Common;
 
+namespace Asv.Hal;
 
 public class SingleComboBox<TValue> : Control where TValue : struct, Enum 
 {
@@ -12,6 +13,7 @@ public class SingleComboBox<TValue> : Control where TValue : struct, Enum
 
     public SingleComboBox(string? header, Func<TValue, string>? nameGetter = null)
     {
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
         nameGetter ??= @enum => $"{@enum:G}" ;
         if (header != null)
         {
@@ -37,7 +39,7 @@ public class SingleComboBox<TValue> : Control where TValue : struct, Enum
             if (_value.Equals(value)) return;
             _value = value;
             RiseRenderRequestEvent();
-            Event(new EnumValueEditedEvent<TValue>(this, _value));
+            Events.Rise(new EnumValueEditedEvent<TValue>(this, _value));
         }
     }
 
@@ -56,41 +58,37 @@ public class SingleComboBox<TValue> : Control where TValue : struct, Enum
         ctx.FillChar(startX + strValue.Length,1,ctx.Size.Width - startX - strValue.Length,_background);
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnKeyDownEvent(KeyDownEvent e)
     {
-        if (e is KeyDownEvent key)
+        switch (e.Key.Type)
         {
-            switch (key.Key.Type)
-            {
-                case KeyType.Digit:
-                    if (key.Key.Value == '1')
-                    {
-                        Value = _availableIndexesFromValue.TryGetValue(Value, out var idx)
-                            ? _availableValues[(idx + 1) % _availableValues.Length]
-                            : _availableValues[0];
-                    }
-                    // if (_availableValuesFromChar.TryGetValue(key.Key.Value ?? default, out var value))
-                    // {
-                    //     Value = value;
-                    // }
-                    e.IsHandled = true;
-                    IsFocused = false;
-                    break;
-                case KeyType.UpArrow:
-                    var index = (_availableIndexesFromValue[Value] + 1) % _availableValues.Length;
-                    Value = _availableValues[index];
-                    e.IsHandled = true;
-                    IsFocused = false;
-                    break;
-                case KeyType.DownArrow:
-                    var index1 = _availableIndexesFromValue[Value] - 1;
-                    if (index1 < 0) index1 = _availableValues.Length - 1;
-                    Value = _availableValues[index1];
-                    e.IsHandled = true;
-                    IsFocused = false;
-                    break;
-            }
+            case KeyType.Digit:
+                if (e.Key.Value == '1')
+                {
+                    Value = _availableIndexesFromValue.TryGetValue(Value, out var idx)
+                        ? _availableValues[(idx + 1) % _availableValues.Length]
+                        : _availableValues[0];
+                }
+                // if (_availableValuesFromChar.TryGetValue(key.Key.Value ?? default, out var value))
+                // {
+                //     Value = value;
+                // }
+                e.IsHandled = true;
+                IsFocused = false;
+                break;
+            case KeyType.UpArrow:
+                var index = (_availableIndexesFromValue[Value] + 1) % _availableValues.Length;
+                Value = _availableValues[index];
+                e.IsHandled = true;
+                IsFocused = false;
+                break;
+            case KeyType.DownArrow:
+                var index1 = _availableIndexesFromValue[Value] - 1;
+                if (index1 < 0) index1 = _availableValues.Length - 1;
+                Value = _availableValues[index1];
+                e.IsHandled = true;
+                IsFocused = false;
+                break;
         }
-
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Asv.Hal;
+using Asv.Common;
+
+namespace Asv.Hal;
 
 public class BlinkTextBlock:TextBlock
 {
@@ -6,6 +8,11 @@ public class BlinkTextBlock:TextBlock
     private long _lastBlink;
     private TimeSpan _blinkTime = TimeSpan.FromMilliseconds(500);
     private bool _isBlinkFlag;
+
+    public BlinkTextBlock()
+    {
+        Events.Catch<AnimationTickEvent>(OnAnimationTickEvent).DisposeItWith(Disposable);
+    }
 
     public bool IsBlink
     {
@@ -39,14 +46,14 @@ public class BlinkTextBlock:TextBlock
         }
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnAnimationTickEvent(AnimationTickEvent e)
     {
-        if (IsBlink && e is AnimationTickEvent anim)
+        if (IsBlink)
         {
-            if (anim.TimeProvider.GetElapsedTime(_lastBlink) > BlinkTime)
+            if (e.TimeProvider.GetElapsedTime(_lastBlink) > BlinkTime)
             {
                 _isBlinkFlag = !_isBlinkFlag;
-                _lastBlink = anim.TimeProvider.GetTimestamp();
+                _lastBlink = e.TimeProvider.GetTimestamp();
                 RiseRenderRequestEvent();
             }
         }

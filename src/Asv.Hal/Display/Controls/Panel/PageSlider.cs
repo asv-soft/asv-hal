@@ -1,9 +1,20 @@
+using Asv.Common;
+
 namespace Asv.Hal;
 
 public class PageSlider:Panel
 {
     private int _pageIndex;
     private bool _isEditingProcess;
+
+    public PageSlider()
+    {
+        Events.Catch<ValueEditingProcessEvent>(OnValueEditingProcessEvent).DisposeItWith(Disposable);
+        Events.Catch<ValueEditedEvent>(OnValueEditedEvent).DisposeItWith(Disposable);
+        Events.Catch<EnumValueEditedEvent>(OnEnumValueEditedEvent).DisposeItWith(Disposable);
+        Events.Catch<AttachEvent>(OnAttachEvent).DisposeItWith(Disposable);
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
+    }
 
     public int PageIndex
     {
@@ -32,54 +43,47 @@ public class PageSlider:Panel
         SelectedPage?.Render(context);
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnValueEditingProcessEvent(ValueEditingProcessEvent e)
     {
-        switch (e)
-        {
-            case ValueEditingProcessEvent: // { Sender: TextBox }:
-                _isEditingProcess = true;
-                break;
-            case ValueEditedEvent:
-                _isEditingProcess = false;
-                break;
-            case EnumValueEditedEvent:
-                _isEditingProcess = false;
-                break;
-            case AttachEvent:
-            {
-                IsFocused = false;
-                if (SelectedPage != null) SelectedPage.IsFocused = true;
-                break;
-            }
-            case KeyDownEvent key:
-            {
-                if (IsFocused)
-                {
-                    if (SelectedPage != null) SelectedPage.IsFocused = true;
-                }
-                if (key.Key.Type == KeyType.RightArrow)
-                {
-                    if (!_isEditingProcess)
-                    {
-                        PageIndex++;
-                        e.IsHandled = true;
-                    }
-                }
+        _isEditingProcess = true;
+    }
 
-                if (key.Key.Type == KeyType.LeftArrow)
-                {
-                    if (!_isEditingProcess)
-                    {
-                        PageIndex--;
-                        e.IsHandled = true;
-                    }
-                }
-            
-                var copy = e.Clone();
-                e.IsHandled = true;
-                SelectedPage?.Event(copy);
-                break;
-            }
+    private void OnValueEditedEvent(ValueEditedEvent e)
+    {
+        _isEditingProcess = false;
+    }
+
+    private void OnEnumValueEditedEvent(EnumValueEditedEvent e)
+    {
+        _isEditingProcess = false;
+    }
+
+    private void OnAttachEvent(AttachEvent e)
+    {
+        IsFocused = false;
+        if (SelectedPage != null) SelectedPage.IsFocused = true;
+    }
+
+    private void OnKeyDownEvent(KeyDownEvent e)
+    {
+        if (IsFocused)
+        {
+            if (SelectedPage != null) SelectedPage.IsFocused = true;
         }
+        if (e.Key.Type == KeyType.RightArrow && !_isEditingProcess)
+        {
+            PageIndex++;
+            e.IsHandled = true;
+        }
+
+        if (e.Key.Type == KeyType.LeftArrow && !_isEditingProcess)
+        {
+            PageIndex--;
+            e.IsHandled = true;
+        }
+
+        var copy = e.Clone();
+        e.IsHandled = true;
+        SelectedPage?.Events.Rise(copy);
     }
 }

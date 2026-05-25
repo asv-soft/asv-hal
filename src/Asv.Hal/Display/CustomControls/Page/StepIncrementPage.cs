@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using Asv.Common;
 
 namespace Asv.Hal;
 
@@ -17,8 +18,12 @@ public class StepIncrementPage : PropertyEditor
         string valueHeader, string units, string stringFormat,
         double defaultValue, string stepHeader, double stepValue,
         Func<double, double> valueValidator, Func<double, double> stepValidator, 
-        TextBox? addition = null, Action<TextBox, double>? additionFiller = null, Action<double>? setCallback = null) : base(null)
+        TextBox? addition = null, Action<TextBox, double>? additionFiller = null, Action<double>? setCallback = null)
+        : base(null, HorizontalPosition.Left, false)
     {
+        Events.Catch<LostFocusEvent>(OnLostFocusEvent).DisposeItWith(Disposable);
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
+        Events.Catch<ValueEditedEvent>(OnValueEditedEvent).DisposeItWith(Disposable);
         Header = new ToggleSwitch(header, trueText, falseText);
         _stringFormat = stringFormat;
         _defaultValue = valueValidator(defaultValue);
@@ -54,72 +59,73 @@ public class StepIncrementPage : PropertyEditor
             _additionFiller.Invoke((TextBox)Items[2], value);
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnLostFocusEvent(LostFocusEvent e)
     {
-        if (e is LostFocusEvent focus && focus.Sender == SelectedItem)
+        if (e.Sender == SelectedItem)
         {
             IsFocused = true;
         }
-        if (e is KeyDownEvent key)
-        {
-            if (IsFocused)
-            {
-                switch (key.Key.Type)
-                {
-                    case KeyType.Enter:
-                        var copy = e.Clone();
-                        e.IsHandled = true;
-                        Header?.Event(copy);
-                        break;
-                    case KeyType.DownArrow:
-                        ChangeValue(KeyType.DownArrow);
-                        e.IsHandled = true;
-                        break;
-                    case KeyType.UpArrow:
-                        ChangeValue(KeyType.UpArrow);
-                        e.IsHandled = true;
-                        break;
-                    case KeyType.Digit:
-                        Debug.Assert(key.Key.Value.HasValue);
-                        SelectedIndex = int.Parse(key.Key.Value.Value.ToString()) - 1;// numbering start with 1
-                        e.IsHandled = true;
-                        if (SelectedIndex < 2 && SelectedItem != null)
-                        {
-                            SelectedItem.IsFocused = true;
-                            Event(new ValueEditingProcessEvent(SelectedItem));
-                        }
-                        break;
-                }
-            }
-            else
-            {
-                var copy = e.Clone();
-                e.IsHandled = true;
-                SelectedItem?.Event(copy);
-            }
-        }
+    }
 
-        if (e is ValueEditedEvent rrr)
+    private void OnKeyDownEvent(KeyDownEvent e)
+    {
+        if (IsFocused)
         {
-            if (rrr.Sender == Items[0])
+            switch (e.Key.Type)
             {
-                var value = _defaultValue;
-                if (double.TryParse(rrr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var v))
-                    value = _valueValidator(v);
-                ((TextBox)Items[0]).Text = value.ToString(_stringFormat, CultureInfo.InvariantCulture);
-                _setCallback?.Invoke(value);
-                if (Items.Count > 2)
-                    _additionFiller.Invoke((TextBox)Items[2], value);    
+                case KeyType.Enter:
+                    var copy = e.Clone();
+                    e.IsHandled = true;
+                    Header?.Events.Rise(copy);
+                    break;
+                case KeyType.DownArrow:
+                    ChangeValue(KeyType.DownArrow);
+                    e.IsHandled = true;
+                    break;
+                case KeyType.UpArrow:
+                    ChangeValue(KeyType.UpArrow);
+                    e.IsHandled = true;
+                    break;
+                case KeyType.Digit:
+                    Debug.Assert(e.Key.Value.HasValue);
+                    SelectedIndex = int.Parse(e.Key.Value.Value.ToString()) - 1;// numbering start with 1
+                    e.IsHandled = true;
+                    if (SelectedIndex < 2 && SelectedItem != null)
+                    {
+                        SelectedItem.IsFocused = true;
+                        Events.Rise(new ValueEditingProcessEvent(SelectedItem));
+                    }
+                    break;
             }
-            if (rrr.Sender == Items[1])
-            {
-                var step = _stepValue;
-                if (double.TryParse(rrr.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var s))
-                    step = s;
-                ((TextBox)Items[1]).Text = _stepValidator(step).ToString(_stringFormat, CultureInfo.InvariantCulture);
-            }
-            // Event(rrr);
         }
+        else
+        {
+            var copy = e.Clone();
+            e.IsHandled = true;
+            SelectedItem?.Events.Rise(copy);
+        }
+    }
+
+    private void OnValueEditedEvent(ValueEditedEvent e)
+    {
+        if (e.Sender == Items[0])
+        {
+            var value = _defaultValue;
+            if (double.TryParse(e.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var v))
+                value = _valueValidator(v);
+            ((TextBox)Items[0]).Text = value.ToString(_stringFormat, CultureInfo.InvariantCulture);
+            _setCallback?.Invoke(value);
+            if (Items.Count > 2)
+                _additionFiller.Invoke((TextBox)Items[2], value);    
+        }
+        if (e.Sender == Items[1])
+        {
+            var step = _stepValue;
+            if (double.TryParse(e.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var s))
+                step = s;
+            ((TextBox)Items[1]).Text = _stepValidator(step).ToString(_stringFormat, CultureInfo.InvariantCulture);
+        }
+        //Events.Riserrr);
     }
     
     private void ChangeValue(KeyType key)

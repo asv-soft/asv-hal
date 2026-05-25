@@ -1,4 +1,6 @@
-﻿namespace Asv.Hal;
+using Asv.Common;
+
+namespace Asv.Hal;
 
 public class ComboBox<TValue> : Control where TValue : struct, Enum 
 {
@@ -14,6 +16,8 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
 
     public ComboBox(string? header, Func<TValue, string>? nameGetter = null)
     {
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
+        Events.Catch<AnimationTickEvent>(OnAnimationTickEvent).DisposeItWith(Disposable);
         nameGetter ??= @enum => $"{@enum:G}" ;
         if (header != null)
         {
@@ -38,7 +42,7 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
             if (_value.Equals(value)) return;
             _value = value;
             RiseRenderRequestEvent();
-            // Event(new EnumValueEditedEvent<TValue>(this, _value));
+            //Events.Rise(new EnumValueEditedEvent<TValue>(this, _value));
         }
     }
 
@@ -91,59 +95,58 @@ public class ComboBox<TValue> : Control where TValue : struct, Enum
         }
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnKeyDownEvent(KeyDownEvent e)
     {
-        if (e is KeyDownEvent key)
+        switch (e.Key.Type)
         {
-            switch (key.Key.Type)
-            {
-                case KeyType.Digit:
-                    if (key.Key.Value == '1')
-                    {
-                        Value = _availableIndexesFromValue.TryGetValue(Value, out var idx)
-                            ? _availableValues[(idx + 1) % _availableValues.Length]
-                            : _availableValues[0];
-                    }
-                    e.IsHandled = true;
-                    IsFocused = true;
-                    break;
-                case KeyType.UpArrow:
-                    var index = (_availableIndexesFromValue[Value] + 1) % _availableValues.Length;
-                    Value = _availableValues[index];
-                    e.IsHandled = true;
-                    IsFocused = true;
-                    break;
-                case KeyType.DownArrow:
-                    var index1 = _availableIndexesFromValue[Value] - 1;
-                    if (index1 < 0) index1 = _availableValues.Length - 1;
-                    Value = _availableValues[index1];
-                    e.IsHandled = true;
-                    IsFocused = true;
-                    break;
-                case KeyType.Enter:
-                    e.IsHandled = true;
-                    IsFocused = false;
-                    _lastValue = Value;
-                    Event(new EnumValueEditedEvent<TValue>(this, Value));
-                    break;
-                case KeyType.Escape:
-                    Value = _lastValue;
-                    e.IsHandled = true;
-                    IsFocused = false;
-                    // Event(new EnumValueEditedEvent<TValue>(this, Value));
-                    break;
-            }
+            case KeyType.Digit:
+                if (e.Key.Value == '1')
+                {
+                    Value = _availableIndexesFromValue.TryGetValue(Value, out var idx)
+                        ? _availableValues[(idx + 1) % _availableValues.Length]
+                        : _availableValues[0];
+                }
+                e.IsHandled = true;
+                IsFocused = true;
+                break;
+            case KeyType.UpArrow:
+                var index = (_availableIndexesFromValue[Value] + 1) % _availableValues.Length;
+                Value = _availableValues[index];
+                e.IsHandled = true;
+                IsFocused = true;
+                break;
+            case KeyType.DownArrow:
+                var index1 = _availableIndexesFromValue[Value] - 1;
+                if (index1 < 0) index1 = _availableValues.Length - 1;
+                Value = _availableValues[index1];
+                e.IsHandled = true;
+                IsFocused = true;
+                break;
+            case KeyType.Enter:
+                e.IsHandled = true;
+                IsFocused = false;
+                _lastValue = Value;
+                Events.Rise(new EnumValueEditedEvent<TValue>(this, Value));
+                break;
+            case KeyType.Escape:
+                Value = _lastValue;
+                e.IsHandled = true;
+                IsFocused = false;
+                //Events.Rise(new EnumValueEditedEvent<TValue>(this, Value));
+                break;
         }
-        
-        if (e is AnimationTickEvent anim && IsFocused)
+    }
+    
+    private void OnAnimationTickEvent(AnimationTickEvent e)
+    {
+        if (IsFocused)
         {
-            if (anim.TimeProvider.GetElapsedTime(_lastBlink) > BlinkTime)
+            if (e.TimeProvider.GetElapsedTime(_lastBlink) > BlinkTime)
             {
                 _isCaretVisible = !_isCaretVisible;
-                _lastBlink = anim.TimeProvider.GetTimestamp();
+                _lastBlink = e.TimeProvider.GetTimestamp();
                 RiseRenderRequestEvent();
             }
         }
-
     }
 }

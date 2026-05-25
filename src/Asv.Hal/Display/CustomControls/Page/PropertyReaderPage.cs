@@ -1,4 +1,5 @@
 using System.Globalization;
+using Asv.Common;
 
 namespace Asv.Hal;
 
@@ -10,6 +11,7 @@ public class PropertyReaderPage : GroupBox
     
     public PropertyReaderPage(string? header, string trueText, string falseText,  string? propertyName, string stringFormat) : base(null)
     {
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
         Header = new ToggleSwitch(header, trueText, falseText);
         _stringFormat = stringFormat;
         PropertyName = propertyName;
@@ -35,12 +37,12 @@ public class PropertyReaderPage : GroupBox
         }
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnKeyDownEvent(KeyDownEvent e)
     {
-        if (e is not KeyDownEvent { Key.Type: KeyType.Enter }) return;
+        if (e.Key.Type != KeyType.Enter) return;
         var copy = e.Clone();
         e.IsHandled = true;
-        Header?.Event(copy);
+        Header?.Events.Rise(copy);
     }
 
     protected override void InternalRenderChildren(IRenderContext ctx)

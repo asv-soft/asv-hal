@@ -1,3 +1,5 @@
+using Asv.Common;
+
 namespace Asv.Hal;
 
 public class CustomToggleSwitch : ToggleSwitch
@@ -7,17 +9,18 @@ public class CustomToggleSwitch : ToggleSwitch
     private readonly string _falseText;
     private readonly Action<bool> _onClick;
 
-    public CustomToggleSwitch(KeyType eventKeyType, string? header = null, string trueText = "ON", string falseText = "OFF", Action<bool>? onClick = null) : base(header, trueText, falseText)
+    public CustomToggleSwitch(KeyType eventKeyType, string? header = null, string trueText = "ON", string falseText = "OFF", Action<bool>? onClick = null) : base(header, trueText, falseText, false)
     {
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
         _eventKeyType = eventKeyType;
         _trueText = trueText;
         _falseText = falseText;
         _onClick = onClick ?? (_ => { });
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnKeyDownEvent(KeyDownEvent e)
     {
-        if (e is KeyDownEvent kd && kd.Key.Type == _eventKeyType)
+        if (e.Key.Type == _eventKeyType)
         {
             e.IsHandled = true;
             Value = !Value;

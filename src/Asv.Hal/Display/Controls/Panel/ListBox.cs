@@ -1,13 +1,26 @@
 using System.Diagnostics;
+using Asv.Common;
 
 namespace Asv.Hal;
 
-public class ListBox(string? header = null, HorizontalPosition headerAlign = HorizontalPosition.Left) 
-    : GroupBox(header, headerAlign)
+public class ListBox : GroupBox
 {
     private int _selectedIndex;
     private string _pointer = "->";
     private string _emptyPointer = "  ";
+
+    public ListBox(string? header = null, HorizontalPosition headerAlign = HorizontalPosition.Left)
+        : this(header, headerAlign, true)
+    {
+    }
+
+    protected ListBox(string? header, HorizontalPosition headerAlign, bool registerEventHandlers)
+        : base(header, headerAlign)
+    {
+        if (registerEventHandlers == false) return;
+        Events.Catch<LostFocusEvent>(OnLostFocusEvent).DisposeItWith(Disposable);
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
+    }
 
     public Control? SelectedItem => Items.Count == 0 ? null : Items[SelectedIndex];
     public int SelectedIndex
@@ -23,7 +36,7 @@ public class ListBox(string? header = null, HorizontalPosition headerAlign = Hor
             RiseRenderRequestEvent();
             var eve = new SelectionChangedEvent(this, Items[old],Items[_selectedIndex]);
             OnSelectionChanged(eve);
-            if (eve.IsHandled == false) Event(eve);
+            if (eve.IsHandled == false) Events.Rise(eve);
         }
     }
     protected override void InternalRenderChildren(IRenderContext ctx)
@@ -76,16 +89,19 @@ public class ListBox(string? header = null, HorizontalPosition headerAlign = Hor
         
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnLostFocusEvent(LostFocusEvent e)
     {
-        base.InternalOnEvent(e);
-        if (e is LostFocusEvent focus && focus.Sender == SelectedItem)
+        if (e.Sender == SelectedItem)
         {
             IsFocused = true;
         }
-        if (e is KeyDownEvent key && IsFocused)
+    }
+
+    private void OnKeyDownEvent(KeyDownEvent e)
+    {
+        if (IsFocused)
         {
-            switch (key.Key.Type)
+            switch (e.Key.Type)
             {
                 case KeyType.DownArrow:
                     SelectedIndex++;
@@ -96,13 +112,12 @@ public class ListBox(string? header = null, HorizontalPosition headerAlign = Hor
                     e.IsHandled = true;
                     break;
                 case KeyType.Digit:
-                    Debug.Assert(key.Key.Value.HasValue);
-                    SelectedIndex = int.Parse(key.Key.Value.Value.ToString()) - 1;// numbering start with 1
+                    Debug.Assert(e.Key.Value.HasValue);
+                    SelectedIndex = int.Parse(e.Key.Value.Value.ToString()) - 1;// numbering start with 1
                     if (SelectedItem != null) SelectedItem.IsFocused = true;
                     e.IsHandled = true;
                     break;
             }
         }
-        
     }
 }

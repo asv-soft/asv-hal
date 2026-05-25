@@ -1,14 +1,21 @@
+using Asv.Common;
+
 namespace Asv.Hal;
 
-public class MenuPanel(string? header = null, HorizontalPosition headerAlign = HorizontalPosition.Left) : ListBox(header, headerAlign)
+public class MenuPanel : ListBox
 {
-    protected override void InternalOnEvent(RoutedEvent e)
+    public MenuPanel(string? header = null, HorizontalPosition headerAlign = HorizontalPosition.Left)
+        : base(header, headerAlign)
     {
-        base.InternalOnEvent(e);
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
+    }
+
+    private void OnKeyDownEvent(KeyDownEvent e)
+    {
         if (e.IsHandled) return;
-        if (e is KeyDownEvent key && IsFocused)
+        if (IsFocused)
         {
-            switch (key.Key.Type)
+            switch (e.Key.Type)
             {
                 case KeyType.Enter:
                     if (SelectedItem != null)
@@ -21,7 +28,7 @@ public class MenuPanel(string? header = null, HorizontalPosition headerAlign = H
                 case KeyType.LeftArrow:
                     SelectedIndex = 0;
                     e.IsHandled = true;
-                    Event(new LostFocusEvent(this));
+                    Events.Rise(new LostFocusEvent(this));
                     break;
                 case KeyType.RightArrow:
                     SelectedIndex = Items.Count - 1;

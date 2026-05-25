@@ -1,4 +1,4 @@
-using System.Net.Mime;
+using Asv.Common;
 
 namespace Asv.Hal;
 
@@ -12,6 +12,10 @@ public class TextBox:Control
 
     public TextBox(string? header = null, string? units = null)
     {
+        Events.Catch<ValueChangedEvent>(OnValueChangedEvent).DisposeItWith(Disposable);
+        Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
+        Events.Catch<AnimationTickEvent>(OnAnimationTickEvent).DisposeItWith(Disposable);
+
         if (header != null)
         {
             AddVisualChild(Header = new TextBlock{Text = header});
@@ -48,8 +52,6 @@ public class TextBox:Control
 
     public char Cursor { get; set; } = '_';
 
-   
-
     protected override void OnGotFocus()
     {
         _lastValue = Text;
@@ -74,7 +76,6 @@ public class TextBox:Control
             RiseRenderRequestEvent();
         }
     }
-   
 
     public override void Render(IRenderContext ctx)
     {
@@ -95,62 +96,61 @@ public class TextBox:Control
             ctx.WriteString(ctx.Width - valueWidth,0,Text);
             Units.Render(ctx.Crop(ctx.Width-Units.Width,0,Units.Width,1));
         }
-        
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnValueChangedEvent(ValueChangedEvent e)
     {
-        if (e is ValueChangedEvent changed && changed.Target == this)
+        if (e.Target == this)
         {
-            Text = changed.Text;
+            Text = e.Text;
         }
+    }
 
-        if (e is KeyDownEvent key)
+    private void OnKeyDownEvent(KeyDownEvent e)
+    {
+        if (IsFocused == false) return;
+        switch (e.Key.Type)
         {
-            if (IsFocused == false) return;
-            switch (key.Key.Type)
-            {
-                case KeyType.Enter:
-                    IsFocused = false;
-                    InternalOnEvent(new ValueEditedEvent(this, Text));
-                    Event(new ValueEditedEvent(this, Text));
-                    break;
-                case KeyType.Digit or KeyType.Dot:
-                    Text += key.Key.Value.ToString();
-                    RiseRenderRequestEvent();
-                    break;
-                case KeyType.LeftArrow:
-                    if (Text?.Length > 0) Text = Text[..^1];   
-                    break;
-                case KeyType.Escape:
-                    Text = _lastValue;
-                    IsFocused = false;
-                    Event(new ValueEditedEvent(this, Text));
-                    break;
-                case KeyType.Function:
-                    if (Text?.Length > 0)
-                    {
-                        Text = Text[0] == '-' ? Text.Substring(1, Text.Length - 1) : $"-{Text}";
-                    }
-                    else
-                    {
-                        Text = "-";
-                    }
-                    break;
-            }
-            e.IsHandled = true;
+            case KeyType.Enter:
+                IsFocused = false;
+                Events.Rise(new ValueEditedEvent(this, Text));
+                break;
+            case KeyType.Digit or KeyType.Dot:
+                Text += e.Key.Value.ToString();
+                RiseRenderRequestEvent();
+                break;
+            case KeyType.LeftArrow:
+                if (Text?.Length > 0) Text = Text[..^1];
+                break;
+            case KeyType.Escape:
+                Text = _lastValue;
+                IsFocused = false;
+                Events.Rise(new ValueEditedEvent(this, Text));
+                break;
+            case KeyType.Function:
+                if (Text?.Length > 0)
+                {
+                    Text = Text[0] == '-' ? Text.Substring(1, Text.Length - 1) : $"-{Text}";
+                }
+                else
+                {
+                    Text = "-";
+                }
+                break;
         }
-        
-        if (e is AnimationTickEvent anim && IsFocused)
+        e.IsHandled = true;
+    }
+
+    private void OnAnimationTickEvent(AnimationTickEvent e)
+    {
+        if (IsFocused)
         {
-            if (anim.TimeProvider.GetElapsedTime(_lastBlink) > BlinkTime)
+            if (e.TimeProvider.GetElapsedTime(_lastBlink) > BlinkTime)
             {
                 _isCaretVisible = !_isCaretVisible;
-                _lastBlink = anim.TimeProvider.GetTimestamp();
+                _lastBlink = e.TimeProvider.GetTimestamp();
                 RiseRenderRequestEvent();
             }
         }
     }
-
-    
 }

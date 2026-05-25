@@ -1,4 +1,6 @@
-﻿namespace Asv.Hal;
+using Asv.Common;
+
+namespace Asv.Hal;
 
 public class Calibration : Control
 {
@@ -10,6 +12,7 @@ public class Calibration : Control
 
     public Calibration(string text, TimeSpan time)
     {
+        Events.Catch<AnimationTickEvent>(OnAnimationTickEvent).DisposeItWith(Disposable);
         _time = time;
         AddVisualChild(_text = new TextBlock
         {
@@ -57,19 +60,16 @@ public class Calibration : Control
         _unit.Render(ctx.Crop(ctx.Width - 3, 2, 1, 1));
     }
     
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnAnimationTickEvent(AnimationTickEvent e)
     {
-        if (e is AnimationTickEvent anim)
+        if (_startTime == null)
         {
-            if (_startTime == null)
-            {
-                _startTime = anim.TimeProvider.GetTimestamp();
-            }
-            else
-            {
-                var delay = anim.TimeProvider.GetElapsedTime(_startTime.Value);
-                Progress = delay.TotalMilliseconds / _time.TotalMilliseconds;
-            }
+            _startTime = e.TimeProvider.GetTimestamp();
+        }
+        else
+        {
+            var delay = e.TimeProvider.GetElapsedTime(_startTime.Value);
+            Progress = delay.TotalMilliseconds / _time.TotalMilliseconds;
         }
     }
     

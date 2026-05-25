@@ -30,11 +30,8 @@ public class ControlModelingEventTests
         var gotFocus = false;
         var lostFocus = false;
 
-        button.OnEvent.Subscribe(e =>
-        {
-            if (e is GotFocusEvent) gotFocus = true;
-            if (e is LostFocusEvent) lostFocus = true;
-        });
+        button.Events.Catch<GotFocusEvent>(_ => gotFocus = true);
+        button.Events.Catch<LostFocusEvent>(_ => lostFocus = true);
 
         button.IsFocused = true;
 

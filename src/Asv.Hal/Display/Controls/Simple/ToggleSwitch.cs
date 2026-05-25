@@ -1,4 +1,6 @@
-﻿namespace Asv.Hal;
+using Asv.Common;
+
+namespace Asv.Hal;
 
 public class ToggleSwitch:Control
 {
@@ -7,9 +9,19 @@ public class ToggleSwitch:Control
     private string _falseText;
     
     public ToggleSwitch(string? header = null, string trueText = "ON", string falseText = "OFF")
+        : this(header, trueText, falseText, true)
+    {
+    }
+
+    protected ToggleSwitch(string? header, string trueText, string falseText, bool registerEventHandlers)
     {
         _trueText = trueText;
         _falseText = falseText;
+        if (registerEventHandlers)
+        {
+            Events.Catch<KeyDownEvent>(OnKeyDownEvent).DisposeItWith(Disposable);
+        }
+
         if (header != null)
         {
             AddVisualChild(Header = new TextBlock{Text = header});
@@ -63,13 +75,13 @@ public class ToggleSwitch:Control
         ctx.WriteString(ctx.Width-strValue.Length,0,strValue);
     }
 
-    protected override void InternalOnEvent(RoutedEvent e)
+    private void OnKeyDownEvent(KeyDownEvent e)
     {
-        if (e is KeyDownEvent { Key.Type: KeyType.Enter })
+        if (e.Key.Type == KeyType.Enter)
         {
             e.IsHandled = true;
             Value = !Value;
-            Event(new ToggleSwichEvent(this, _value));
+            Events.Rise(new ToggleSwichEvent(this, _value));
         }
     }
 }
