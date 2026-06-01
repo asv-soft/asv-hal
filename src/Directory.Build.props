@@ -1,7 +1,21 @@
 <Project>
   <PropertyGroup>
-    <ProductVersion>1.1.0-dev.1</ProductVersion>
-    <TargetFrameworksValue>net10.0</TargetFrameworksValue>
-    <AsvCommonVersion>3.6.0-dev.18</AsvCommonVersion>
+    <ProductVersion>1.1.0-dev.2</ProductVersion>
+    <TargetFramework>net10.0</TargetFramework>
+    <FileVersion>$(ProductVersion)</FileVersion>
+    <Version>$(ProductVersion)</Version>
+    <PackageVersion>$(ProductVersion)</PackageVersion>
+    <Authors>https://github.com/asv-soft</Authors>
+    <Company>https://github.com/asv-soft</Company>
+    <Copyright>https://github.com/asv-soft</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/asv-soft/asv-hal</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/asv-soft/asv-hal</RepositoryUrl>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AsvCommonVersion>3.6.0-dev.21</AsvCommonVersion>
   </PropertyGroup>
 </Project>

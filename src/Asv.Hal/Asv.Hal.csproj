@@ -1,26 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>$(TargetFrameworksValue)</TargetFrameworks>
-        <LangVersion>latest</LangVersion>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <FileVersion>$(ProductVersion)</FileVersion>
-        <Version>$(ProductVersion)</Version>
-        <PackageVersion>$(ProductVersion)</PackageVersion>
-        <Authors>https://github.com/asv-soft</Authors>
-        <Company>https://github.com/asv-soft</Company>
-        <Copyright>https://github.com/asv-soft</Copyright>
-        <PackageProjectUrl>https://github.com/asv-soft/asv-hal</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/asv-soft/asv-hal</RepositoryUrl>
     </PropertyGroup>
     
     <ItemGroup>
         <PackageReference Include="Asv.Common" Version="$(AsvCommonVersion)" />
         <PackageReference Include="Asv.IO" Version="$(AsvCommonVersion)" />
         <PackageReference Include="Asv.Modeling" Version="$(AsvCommonVersion)" />
-        <PackageReference Include="System.Device.Gpio" Version="3.2.0" />
+        <PackageReference Include="System.Device.Gpio" Version="4.2.0" />
         <PackageReference Include="ZLogger" Version="2.5.10" />
     </ItemGroup>
 

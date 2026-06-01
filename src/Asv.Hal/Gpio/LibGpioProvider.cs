@@ -51,7 +51,7 @@ public class LibGpioProvider(ILoggerFactory loggerFactory) : AsyncDisposableOnce
             if (_chip.TryGetValue(chipNumber.Value, out var controller) == false)
             {
                 _logger.ZLogDebug($"Create GPIO controller for chip number {chipNumber}");
-                _chip.Add(chipNumber.Value, controller = new GpioController(PinNumberingScheme.Logical, new LibGpiodDriver(chipNumber.Value)));
+                _chip.Add(chipNumber.Value, controller = new GpioController(new LibGpiodDriver(chipNumber.Value)));
             }
             _logger.ZLogDebug($"Open GIPO pin number {pinNumber}");
             return controller.OpenPin(pinNumber, mode);
