@@ -51,12 +51,27 @@ public class LibGpioProvider(ILoggerFactory loggerFactory) : AsyncDisposableOnce
             if (_chip.TryGetValue(chipNumber.Value, out var controller) == false)
             {
                 _logger.ZLogDebug($"Create GPIO controller for chip number {chipNumber}");
-                _chip.Add(chipNumber.Value, controller = new GpioController(new LibGpiodDriver(chipNumber.Value)));
+                _chip.Add(chipNumber.Value, controller = CreateController(chipNumber.Value));
             }
             _logger.ZLogDebug($"Open GIPO pin number {pinNumber}");
             return controller.OpenPin(pinNumber, mode);
 
 
+        }
+    }
+
+    private GpioController CreateController(int chipNumber)
+    {
+        try
+        {
+            return new GpioController(new LibGpiodV2Driver(chipNumber));
+        }
+        catch (PlatformNotSupportedException ex)
+        {
+            _logger.ZLogWarning(
+                $"Unable to create GPIO controller with libgpiod V2 driver for chip number {chipNumber}. Fallback to libgpiod V1 driver. {ex.Message}"
+            );
+            return new GpioController(new LibGpiodDriver(chipNumber));
         }
     }
 }
