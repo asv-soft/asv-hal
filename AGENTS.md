@@ -117,9 +117,9 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 Package and dependency versions are centralized in `src/Directory.Build.props`:
 
 ```xml
-<ProductVersion>1.1.0-dev.4</ProductVersion>
+<ProductVersion>1.1.0-dev.6</ProductVersion>
 <TargetFramework>net10.0</TargetFramework>
-<AsvCommonVersion>3.6.0-dev.25</AsvCommonVersion>
+<AsvCommonVersion>3.6.0-dev.26</AsvCommonVersion>
 ```
 
 `Version`, `PackageVersion`, and `FileVersion` inherit from `ProductVersion`. Do not set package versions per-project unless an explicit task requires it.
