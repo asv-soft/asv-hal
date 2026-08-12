@@ -194,22 +194,36 @@ public class TelnetParser:DisposableOnceWithCancel
 
 public class TelnetKeyboard:KeyboardBase
 {
+    private const byte Null = 0x00;
+    private const byte Backspace = 0x08;
+    private const byte LineFeed = 0x0A;
+    private const byte CarriageReturn = 0x0D;
+    private const byte Escape = 0x1B;
+    private const byte Delete = 0x7F;
+
+    private const byte TelnetEcho = 0x01;
+    private const byte TelnetSuppressGoAhead = 0x03;
+    private const byte TelnetLineMode = 0x22;
+
     private readonly IDataStream _port;
     private readonly StringBuilder _vtSequence = new();
+    private TelnetOptions _optionCommand;
+    private bool _characterModeRequested;
+    private bool _ignoreLineFeedOrNullAfterCarriageReturn;
 
     enum State
     {
         Idle,
         Iac,
-        IacDo,
         Esc,
-        IacWill,
-        EscBracket,
-        EndLine,
-        EscBracketVtSequence
+        IacOption,
+        SubNegotiation,
+        SubNegotiationIac,
+        Csi,
+        CsiBracket,
+        Ss3
     }
     private State _state;
-    
 
     public TelnetKeyboard(IDataStream port)
     {
@@ -219,153 +233,299 @@ public class TelnetKeyboard:KeyboardBase
 
     private void OnData(byte[] data)
     {
-        foreach (var b in Encoding.ASCII.GetChars(data))
+        if (data.Length == 0) return;
+        RequestCharacterMode();
+
+        foreach (var b in data)
         {
+            if (_ignoreLineFeedOrNullAfterCarriageReturn)
+            {
+                if (b is LineFeed or Null)
+                {
+                    _ignoreLineFeedOrNullAfterCarriageReturn = false;
+                    continue;
+                }
+
+                _ignoreLineFeedOrNullAfterCarriageReturn = false;
+            }
+
             switch (_state)
             {
                 case State.Idle:
                     _state = IdleMode(b);
                     break;
-                case State.EndLine:
-                    _state = EndLine(b);
-                    break;
                 case State.Iac:
                     _state = Iac(b);
                     break;
-                case State.IacDo:
-                    _state = IacDo(b);
-                    return;
-                case State.IacWill:
-                    _state = IacWill(b);
-                    return;
+                case State.IacOption:
+                    _state = IacOption(b);
+                    break;
+                case State.SubNegotiation:
+                    _state = SubNegotiation(b);
+                    break;
+                case State.SubNegotiationIac:
+                    _state = SubNegotiationIac(b);
+                    break;
                 case State.Esc:
                     _state = Esc(b);
                     break;
-                case State.EscBracket:
-                    _state = EscBracket(b);
+                case State.Csi:
+                    _state = Csi(b);
                     break;
-                case State.EscBracketVtSequence:
-                    _state = EscBracketVtSequence(b);
-                    return;
+                case State.CsiBracket:
+                    _state = CsiBracket(b);
+                    break;
+                case State.Ss3:
+                    _state = Ss3(b);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
     }
 
-    private State EndLine(char b)
-    {
-        if (b == 0x0D)
-        {
-            RiseEnterEvent();
-        }
-        return State.Idle;
-    }
-
-    private State EscBracket(char b)
+    private State IdleMode(byte b)
     {
         switch (b)
         {
-            case (char)0x41:
-                RiseUpArrowEvent();
-                break;
-            case (char)0x42:
-                RiseDownArrowEvent();
-                break;
-            case (char)0x43:
-                RiseRightArrowEvent();
-                break;
-            case (char)0x44:
-                RiseLeftArrowEvent();
-                break;
+            case (byte)TelnetOptions.Iac:
+                return State.Iac;
+            case Escape:
+                return State.Esc;
+            case CarriageReturn:
+                RiseEnterEvent();
+                _ignoreLineFeedOrNullAfterCarriageReturn = true;
+                return State.Idle;
+            case LineFeed:
+                RiseEnterEvent();
+                return State.Idle;
+            case Backspace:
+            case Delete:
+                RiseEscapeEvent();
+                return State.Idle;
+            case (byte)'.':
+            case (byte)',':
+                RiseDotEvent();
+                return State.Idle;
+            default:
+                if (IsAsciiDigit(b))
+                {
+                    RiseDigitEvent((char)b);
+                }
+                return State.Idle;
         }
+    }
 
-        if (char.IsDigit((char)b))
+    private State Iac(byte b)
+    {
+        switch ((TelnetOptions)b)
         {
-            return EscBracketVtSequence(b);
+            case TelnetOptions.Iac:
+                return State.Idle;
+            case TelnetOptions.Do:
+            case TelnetOptions.Dont:
+            case TelnetOptions.Will:
+            case TelnetOptions.Wont:
+                _optionCommand = (TelnetOptions)b;
+                return State.IacOption;
+            case TelnetOptions.Sb:
+                return State.SubNegotiation;
+            case TelnetOptions.EraseCharacter:
+            case TelnetOptions.EraseLine:
+            case TelnetOptions.Break:
+            case TelnetOptions.InterruptProcess:
+                RiseEscapeEvent();
+                return State.Idle;
+            default:
+                return State.Idle;
         }
+    }
+
+    private State IacOption(byte option)
+    {
+        ReplyToTelnetOption(_optionCommand, option);
         return State.Idle;
     }
 
-    private State EscBracketVtSequence(char b)
+    private static State SubNegotiation(byte b)
     {
-        var c = (char)b;
-        if (c == 0x7E)
+        return b == (byte)TelnetOptions.Iac ? State.SubNegotiationIac : State.SubNegotiation;
+    }
+
+    private static State SubNegotiationIac(byte b)
+    {
+        return b == (byte)TelnetOptions.Se ? State.Idle : State.SubNegotiation;
+    }
+
+    private State Esc(byte b)
+    {
+        switch (b)
         {
-            switch (_vtSequence.ToString())
-            {
-                case "11":
-                    RiseFunctionEvent();
-                    break;
-            }
+            case (byte)'[':
+                _vtSequence.Clear();
+                return State.Csi;
+            case (byte)'O':
+                return State.Ss3;
+            case Escape:
+                RiseEscapeEvent();
+                return State.Esc;
+            default:
+                RiseEscapeEvent();
+                return IdleMode(b);
+        }
+    }
+
+    private State Csi(byte b)
+    {
+        if (b == (byte)'[' && _vtSequence.Length == 0)
+        {
+            return State.CsiBracket;
+        }
+
+        if (IsCsiParameterByte(b))
+        {
+            _vtSequence.Append((char)b);
+            return State.Csi;
+        }
+
+        if (IsCsiFinalByte(b))
+        {
+            ProcessCsiFinal(b);
             _vtSequence.Clear();
             return State.Idle;
         }
-        if (char.IsDigit((char)b))
+
+        _vtSequence.Clear();
+        return State.Idle;
+    }
+
+    private State CsiBracket(byte b)
+    {
+        if (b == (byte)'A')
         {
-            _vtSequence.Append(c);
-            return State.EscBracketVtSequence;
+            RiseFunctionEvent();
         }
+
         return State.Idle;
     }
 
-    private State IacWill(char b)
-    {   
-        //Debug.WriteLine($"IAC WILL {b:X}");
-        
-        _port.Send([0xFF,0xFB,0x01], 3, default).Wait(); // [IAC WILL ECHO] Suppress Echo
-        _port.Send([0xFF,0xFD,0x03], 3, default).Wait(); // [IAC DO SUPPRESS-GOAHEAD] Character Mode / Line Mode
-        _port.Send([0xFF,0xFB,0x03], 3, default).Wait(); // [IAC DO SUPPRESS-GOAHEAD] Character Mode / Line Mode
-        return State.Idle;
-    }
-
-    private static State IacDo(char b)
+    private State Ss3(byte b)
     {
-        //Debug.WriteLine($"IAC DO {b:X}");
-        return State.Idle;
-    }
-
-    private static State Esc(char b)
-    {
-        return b switch
+        switch (b)
         {
-            (char)0x5B => State.EscBracket,
-            _ => State.Idle
-        };
-    }
-
-    private static State Iac(char b)
-    {
-        return b switch
-        {
-            (char)0xFD => State.IacDo,
-            (char)0xFB => State.IacWill,
-            _ => State.Idle
-        };
-    }
-
-    private State IdleMode(char b)
-    {
-        if (char.IsDigit(b))
-        {
-            RiseDigitEvent(b);
-            return State.Idle;
+            case (byte)'A':
+                RiseUpArrowEvent();
+                break;
+            case (byte)'B':
+                RiseDownArrowEvent();
+                break;
+            case (byte)'C':
+                RiseRightArrowEvent();
+                break;
+            case (byte)'D':
+                RiseLeftArrowEvent();
+                break;
+            case (byte)'P':
+                RiseFunctionEvent();
+                break;
         }
+
         return State.Idle;
-        /*switch (b)
+    }
+
+    private void ProcessCsiFinal(byte b)
+    {
+        switch (b)
         {
-            case 0x7F :
+            case (byte)'A':
+                RiseUpArrowEvent();
+                break;
+            case (byte)'B':
+                RiseDownArrowEvent();
+                break;
+            case (byte)'C':
+                RiseRightArrowEvent();
+                break;
+            case (byte)'D':
+                RiseLeftArrowEvent();
+                break;
+            case (byte)'~':
+                ProcessCsiTilde(_vtSequence.ToString());
+                break;
+        }
+    }
+
+    private void ProcessCsiTilde(string sequence)
+    {
+        var keyCode = sequence.Split(';')[0];
+        switch (keyCode)
+        {
+            case "3":
                 RiseEscapeEvent();
-                return State.Idle;
-            case 0xFF:
-                return State.Iac;
-            case 0x1B:
-                return State.Esc;
-            case 0x0A:
-                return State.EndLine;
-            default:
-                return State.Idle;
-        }*/
+                break;
+            case "11":
+                RiseFunctionEvent();
+                break;
+        }
+    }
+
+    private void RequestCharacterMode()
+    {
+        if (_characterModeRequested) return;
+        _characterModeRequested = true;
+
+        _ = SendTelnetCommand(TelnetOptions.Will, TelnetEcho);
+        _ = SendTelnetCommand(TelnetOptions.Will, TelnetSuppressGoAhead);
+        _ = SendTelnetCommand(TelnetOptions.Do, TelnetSuppressGoAhead);
+        _ = SendTelnetCommand(TelnetOptions.Dont, TelnetLineMode);
+    }
+
+    private void ReplyToTelnetOption(TelnetOptions command, byte option)
+    {
+        switch (command)
+        {
+            case TelnetOptions.Do:
+                _ = SendTelnetCommand(option is TelnetEcho or TelnetSuppressGoAhead
+                    ? TelnetOptions.Will
+                    : TelnetOptions.Wont, option);
+                break;
+            case TelnetOptions.Will:
+                _ = SendTelnetCommand(option == TelnetSuppressGoAhead
+                    ? TelnetOptions.Do
+                    : TelnetOptions.Dont, option);
+                break;
+            case TelnetOptions.Dont:
+            case TelnetOptions.Wont:
+                break;
+        }
+    }
+
+    private async Task SendTelnetCommand(TelnetOptions command, byte option)
+    {
+        try
+        {
+            byte[] data = [(byte)TelnetOptions.Iac, (byte)command, option];
+            await _port.Send(data, data.Length, default).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Negotiation is best effort; input parsing must survive disconnected TCP clients.
+        }
+    }
+
+    private static bool IsAsciiDigit(byte b)
+    {
+        return b is >= (byte)'0' and <= (byte)'9';
+    }
+
+    private static bool IsCsiParameterByte(byte b)
+    {
+        return b is >= 0x30 and <= 0x3F;
+    }
+
+    private static bool IsCsiFinalByte(byte b)
+    {
+        return b is >= 0x40 and <= 0x7E;
     }
 }
 
