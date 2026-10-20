@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Asv.Hal Display output preview</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:32px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.capture{width:820px;background:#171c24;border:1px solid #303947;border-radius:12px;overflow:hidden;color:#e6edf3}.heading{padding:22px 28px 18px;border-bottom:1px solid #303947}.eyebrow{color:#92a6bf;font-size:12px;font-weight:600;letter-spacing:1.2px;margin-bottom:8px}.title{font-size:21px;font-weight:600;display:flex;align-items:center;justify-content:space-between}.size{font-size:13px;font-weight:400;color:#a8b8cc;border:1px solid #3a4759;border-radius:5px;padding:4px 9px}.terminal{padding:26px 28px 28px}pre{margin:0;font-family:Menlo,"SFMono-Regular",Consolas,monospace;font-size:21px;line-height:1.45;white-space:pre;color:#e8f0f8}.footer{padding:12px 28px;background:#1e2632;color:#9aaec5;font-size:12px;border-top:1px solid #303947}
+</style>
+<main class="capture">
+  <header class="heading">
+    <div class="eyebrow">ASV.HAL · CONSOLESCREEN</div>
+    <div class="title"><span id="scene-title"></span><span class="size" id="scene-size"></span></div>
+  </header>
+  <div class="terminal"><pre id="output">Loading captured output...</pre></div>
+  <footer class="footer">Actual ConsoleScreen output · browser preview · no physical display required</footer>
+</main>
+<script>
+const scenes = {
+  frame: ['Direct frame', '20 × 4'],
+  menu: ['Menu after three activations', '32 × 4'],
+  status: ['Numeric readout', '32 × 4'],
+  controls: ['Text, toggle, and progress', '32 × 6']
+};
+const requested = new URLSearchParams(location.search).get('example') || 'frame';
+const scene = Object.hasOwn(scenes, requested) ? requested : 'frame';
+document.getElementById('scene-title').textContent = scenes[scene][0];
+document.getElementById('scene-size').textContent = `${scenes[scene][1]} characters`;
+fetch(`output/${scene}.txt`)
+  .then(response => {
+    if (!response.ok) throw new Error('Output file is unavailable');
+    return response.text();
+  })
+  .then(text => document.getElementById('output').textContent = text.trimEnd())
+  .catch(error => document.getElementById('output').textContent = error.message);
+</script>
+</html>
