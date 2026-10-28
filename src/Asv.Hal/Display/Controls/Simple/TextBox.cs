@@ -127,6 +127,7 @@ public class TextBox:Control
                 IsFocused = false;
                 Events.Rise(new ValueEditedEvent(this, Text));
                 break;
+            case KeyType.Minus:
             case KeyType.Function:
                 if (Text?.Length > 0)
                 {

@@ -14,6 +14,11 @@ public class ConsoleKeyboard:KeyboardBase
                     RiseDigitEvent(key.KeyChar);
                     continue;
                 }
+                if (key.KeyChar == '-')
+                {
+                    RiseMinusEvent();
+                    continue;
+                }
                 if (key.KeyChar is '.' or ',')
                 {
                     RiseDotEvent();

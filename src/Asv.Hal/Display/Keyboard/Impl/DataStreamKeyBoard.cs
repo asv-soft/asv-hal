@@ -303,6 +303,9 @@ public class TelnetKeyboard:KeyboardBase
             case Delete:
                 RiseEscapeEvent();
                 return State.Idle;
+            case (byte)'-':
+                RiseMinusEvent();
+                return State.Idle;
             case (byte)'.':
             case (byte)',':
                 RiseDotEvent();

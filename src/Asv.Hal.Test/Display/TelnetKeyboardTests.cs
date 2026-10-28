@@ -75,6 +75,50 @@ public class TelnetKeyboardTests
             key => AssertKey(key, KeyType.Enter));
     }
 
+    [Theory]
+    [InlineData("-41", "-41")]
+    [InlineData("41-", "-41")]
+    [InlineData("--41", "41")]
+    public async Task MinusKey_ThroughWindow_ChangesTextBoxSignWithoutStartingCalibration(string input, string expected)
+    {
+        var context = CreateKeyboard();
+        using var keyboard = context.Keyboard;
+        var screen = new MinusTestScreen();
+        using var window = new Window(TimeProvider.System, Timeout.InfiniteTimeSpan,
+            keyboard, screen, System.Globalization.CultureInfo.InvariantCulture);
+        using var page = new PropertyEditor("CAL");
+        using var field = new TextBox("TX LEVEL", "dBm");
+        page.Items.Add(field);
+        var calibrationStarts = 0;
+        using var subscription = window.Events.Catch<CalibrationStartEvent>(_ => calibrationStarts++);
+        window.GoTo(page);
+        await FlushAsync(window);
+
+        context.Input.OnNext(Encoding.ASCII.GetBytes("-"));
+        await FlushAsync(window);
+        Assert.Equal(0, calibrationStarts);
+
+        context.Input.OnNext(Encoding.ASCII.GetBytes("1"));
+        await FlushAsync(window);
+        context.Input.OnNext(Encoding.ASCII.GetBytes(input + "\r"));
+        await FlushAsync(window);
+
+        Assert.Equal(expected, field.Text);
+        Assert.False(field.IsFocused);
+        Assert.Equal(0, calibrationStarts);
+    }
+
+    private static async Task FlushAsync(Window window)
+    {
+        await window.UiTaskFactory.StartNew(() => { }, TestContext.Current.CancellationToken);
+        await window.UiTaskFactory.StartNew(() => { }, TestContext.Current.CancellationToken);
+    }
+
+    private sealed class MinusTestScreen() : BufferScreen(new Size(20, 4))
+    {
+        protected override void InternalRender(char[,] buffer) { }
+    }
+
     private static KeyboardContext CreateKeyboard()
     {
         var input = new Subject<byte[]>();

@@ -28,6 +28,8 @@ public class KeyboardBase:DisposableOnceWithCancel, IKeyboard
 
     protected void RiseDotEvent() => _onKeyPress.OnNext(new KeyValue(KeyType.Dot, '.'));
 
+    protected void RiseMinusEvent() => _onKeyPress.OnNext(new KeyValue(KeyType.Minus, '-'));
+
     protected void RiseDigitEvent(char digit)
     {
         _onKeyPress.OnNext(new KeyValue(KeyType.Digit, digit));

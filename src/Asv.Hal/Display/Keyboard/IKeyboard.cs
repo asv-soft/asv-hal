@@ -17,7 +17,8 @@ public enum KeyType
     DownArrow,
     LeftArrow,
     RightArrow,
-    Dot
+    Dot,
+    Minus
 }
 
 public class KeyValue(KeyType type, char? value)
