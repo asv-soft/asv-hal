@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE instance-profile SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
+<instance-profile id="asv-hal" name="Asv.Hal" start-page="overview.md">
+    <toc-element topic="overview.md"/>
+    <toc-element topic="getting-started.md"/>
+    <toc-element topic="screens.md"/>
+    <toc-element topic="display-examples.md"/>
+    <toc-element topic="keyboards.md"/>
+    <toc-element topic="controls-events.md"/>
+    <toc-element topic="property-pages.md"/>
+    <toc-element topic="remote-displays.md"/>
+    <toc-element topic="gpio-leds.md"/>
+    <toc-element topic="development.md"/>
+</instance-profile>
